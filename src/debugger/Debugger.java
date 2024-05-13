@@ -522,7 +522,7 @@ public class Debugger {
 				if (!start_AS) {
 					if(debug_rules) {
 				
-					String deb = "__debug(\"" + line_parsed + "\",\"" + info + "\"," + cont + ")";
+					String deb = "__debug(\"" + line_parsed + "\",\" Supporting rule \"," + cont + ")";
 					debugAtoms.add(deb);
 		
 					if (line.contains(":-")) {
@@ -553,23 +553,23 @@ public class Debugger {
 						continue;
 					
 					
-					builder.append(atom_tmp.substring(0, atom_tmp.length()-1) + " :- not " + sup + ".\n");
+					builder.append(atom_tmp.substring(0, atom_tmp.length()-1) + " :- " + sup + ".\n");
 					builder.append("{" + sup + "}.\n");
 					
 					if(debug_AS) {
 				
-					String deb = "__debug(\"" + line_parsed + "\",\"" + info + "\"," + cont + ")";
-					debugAtoms.add(deb);
-			
-					if (line.contains(":-")) {
-						line = line.substring(0, line.length() - 1) + ", not " + deb + ".";
-					} else if (line.contains(".")) {
-						line = line.substring(0, line.length() - 1) + ":- not " + deb + ".";
-					} else {
-						continue;
-					}
-					builder.append(line + "\n");
-					builder.append("{" + deb + "}.\n");
+						String deb = "__debug(\"" + line_parsed + "\",\" Supporting derived atom \"," + cont + ")";
+						debugAtoms.add(deb);
+				
+						if (line.contains(":-")) {
+							line = line.substring(0, line.length() - 1) + ", not " + deb + ".";
+						} else if (line.contains(".")) {
+							line = line.substring(0, line.length() - 1) + ":- not " + deb + ".";
+						} else {
+							continue;
+						}
+						builder.append(line + "\n");
+						builder.append("{" + deb + "}.\n");
 				} else {
 					builder.append(line + "\n");
 					}

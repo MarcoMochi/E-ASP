@@ -334,8 +334,6 @@ public class EditorController {
 				Pattern pattern = Pattern.compile("\\{(.*?)\\}");
 				Matcher matcher = pattern.matcher(r);
 		        if (matcher.find()) {
-		        	String body = matcher.group();
-		        	// String setAtoms = generateSet(body, unsatCore.getRules(), r);
 		        	Button inspect = new Button("Inspect");
 		        	hBox.getChildren().add(inspect);
 		    		hBox.setSpacing(2);
@@ -391,19 +389,7 @@ public class EditorController {
 		change.addEventHandler(ActionEvent.ACTION, new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent event) {
-				for(String r : unsatCore.getRules()) {
-					//if (r.contains(":-")) {
-					//	if (r.contains(":- not")) {
-					//		String temp = r.split(":- not ")[1];
-					//		temp = temp.substring(0,temp.length()-1);
-					//		if (querable.contains(temp))
-					//			continue;
-					//	}
-					//	for(QueryAtom q : qa) {
-					//		if (q.getAtom().equals(r))
-					//			break;
-					//	}	
-						System.out.print("Da aggiungere" + r);
+				for(String r : unsatCore.getRules()) {	
 						d.setIgnore(r);
 					}
 			//} d.backStack();
