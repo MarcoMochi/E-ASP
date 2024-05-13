@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.layout.AnchorPane?>
+
+<AnchorPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="application.EditorController">
+   <children>
+      <BorderPane prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <center>
+            <TabPane fx:id="tabPane" prefHeight="68.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
+         </center>
+         <top>
+            <MenuBar BorderPane.alignment="CENTER">
+              <menus>
+                <Menu mnemonicParsing="false" text="File">
+                  <items>
+                        <MenuItem fx:id="nuovo_menu" mnemonicParsing="false" onAction="#nuovoMenu" text="New" />
+                        <MenuItem fx:id="apri_menu" mnemonicParsing="false" onAction="#apriMenu" text="Open" />
+                        <MenuItem fx:id="salva_menu" mnemonicParsing="false" onAction="#salvaMenu" text="Save" />
+                    <MenuItem fx:id="esci_menu" mnemonicParsing="false" onAction="#esciMenu" text="Exit" />
+                  </items>
+                </Menu>
+                  <Menu mnemonicParsing="false" text="Settings">
+                    <items>
+                      <MenuItem fx:id="solver_menu" mnemonicParsing="false" onAction="#solverMenu" text="Solver" />
+                    </items>
+                  </Menu>
+                <Menu mnemonicParsing="false" text="Help">
+                     <items>
+                        <MenuItem fx:id="about_menu" mnemonicParsing="false" onAction="#aboutMenu" text="About" />
+                     </items>
+                </Menu>
+              </menus>
+            </MenuBar>
+         </top>
+         <bottom>
+            <HBox maxHeight="-Infinity" prefHeight="20.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+               <children>
+                  <Button fx:id="debug" mnemonicParsing="false" onAction="#debug" text="Debug" />
+                  <Button fx:id="reduce" mnemonicParsing="false" onAction="#reduceFaultyRules" text="Reduce" />
+                  <Button fx:id="debugFacts" mnemonicParsing="false" onAction="#debugFacts" text="DebugFacts" />
+                  <Button fx:id="justify" mnemonicParsing="false" onAction="#justify" text="Justify" />
+                  <CheckBox fx:id="check_rules" text="Debug rules" />
+                  <CheckBox fx:id="check_AS" text="Debug Answer Set" />
+               </children>
+            </HBox>
+         </bottom>
+      </BorderPane>
+   </children>
+</AnchorPane>
