@@ -178,3 +178,4 @@ cython_debug/
 /bin/
 /javafx-sdk-18.0.2
 *.class
+.tmp_file

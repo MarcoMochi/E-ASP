@@ -8,11 +8,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 public class DebuggerUtil {
-	public static String solver = "/Users/marco/opt/miniconda3/envs/potassco/bin/clingo";
-	public static String solver2 = "/Users/marco/opt/miniconda3/envs/potassco/bin/clingo";
-	public static String helper = "/Users/marco/Documents/Dottorato/Lavori/Debugger/Encoders/helper.lp";
+	public static String solver = "clingo";
+	public static String helper = "/Users/marco/Documents/GitHub/E-ASP/helper/helper.lp";
 
-	private static String settings = ".mysettings";
+	private static String settings = "set_path";
 
 	public static void readSettings() {
 		File f = new File(settings);
@@ -22,8 +21,12 @@ public class DebuggerUtil {
 			BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(f)));
 			while (br.ready()) {
 				String s = br.readLine();
-				solver = s;
-				break;
+				if (s.contains("CLINGO_PATH"))
+					solver = s.split("=")[1].trim();
+				else if (s.contains("HELPER_PATH"))
+					helper = s.split("=")[1].trim();
+				else
+					break;
 			}
 			br.close();
 		} catch (IOException e) {

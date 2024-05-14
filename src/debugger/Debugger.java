@@ -132,8 +132,7 @@ public class Debugger {
 		System.out.print("Helper" +tmp);
 		File tmpFile = stringToTmpFile(tmp);
 		String output = launchSolver(tmpFile, "--models=1", "--outf=2", true);
-		String output_info = fileToString(new File("info.txt")); 
-		System.out.print(output_info);
+		String output_info = fileToString(new File(".tmp_file")); 
 		String output_split = output_info.split("start:")[1];
 			String[] output_tmp = output_split.split("-mid-");
 			String grounded_tmp = output_tmp[0];
@@ -764,7 +763,7 @@ public class Debugger {
 	
 	
 	private boolean isIncoherent(File encoding, String option1, String option2) throws IOException {
-		process = new ProcessBuilder(DebuggerUtil.solver2, encoding.getAbsolutePath(), option1, option2).start();
+		process = new ProcessBuilder(DebuggerUtil.solver, encoding.getAbsolutePath(), option1, option2).start();
 		while (process.isAlive()) {
 		}
 
@@ -831,15 +830,8 @@ public class Debugger {
 		HashMap<String,HashMap<String, List<String>>> optSet = new HashMap<String, HashMap<String, List<String>>>();
 		
 		StringBuilder builder = new StringBuilder();
-		for (String rule : rules) {
-			if (rule.split(":-").length > 1) {
-				if (!rule.equals(aggregate))
-					builder.append(rule + "\n");	
-			}	
-			else if (!this.falseAtoms.contains(rule.replace(".", "")))
-					builder.append("#external " + rule + "\n");		
-		}
-		for (String rule : this.initialFacts) 
+		builder.append(aggregate + "\n");
+		for (String rule : this.initialFacts)
 			builder.append("#external " + rule + ".\n");
 		for (String rule : this.derivedAtoms)
 			builder.append("#external " + rule + ".\n");
@@ -848,18 +840,14 @@ public class Debugger {
 		
 		
 		builder.append(aggregate);
-		System.out.print("Inizio per aggregati");
-		System.out.print(builder.toString());
 		String output = launchSolver(stringToTmpFile(builder.toString()),  "--mode=gringo", "--text");
-		System.out.print("Risultato");
-		System.out.print(output);
 		String[] grounded = output.split("\n");
 		Pattern pattern = Pattern.compile("\\{(.*?)\\}");
 		String to_delete = "";
 		String message = "";
 		HashMap<String, String> created = new HashMap<String, String>();
 		for (String atom : grounded) {
-			if (atom.startsWith("#external"))
+			if (atom.startsWith("#external") || atom.startsWith("#delayed"))
 				continue;
 			if (atom.startsWith("#")) {
 				if (atom.contains(":-") && atom.split(":-")[0].length() > 0  && atom.split(":-")[1].length() > 0) {
@@ -1369,7 +1357,7 @@ public class Debugger {
 	private String launchSolver(File encoding, String option1, String option2, boolean check_error) {
 		StringBuilder builder = new StringBuilder();
 		try {
-			process = new ProcessBuilder(DebuggerUtil.solver2, encoding.getAbsolutePath(), option1, option2).start();
+			process = new ProcessBuilder(DebuggerUtil.solver, encoding.getAbsolutePath(), option1, option2).start();
 			BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()));
 			if (check_error) {
 				BufferedReader br2 = new BufferedReader(new InputStreamReader(process.getErrorStream()));
