@@ -8,13 +8,13 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 public class DebuggerUtil {
-	public static String solver = "clingo";
-	public static String helper = "/Users/marco/Documents/GitHub/E-ASP/helper/helper.lp";
+	public static String solver = "/opt/homebrew/bin/clingo";
+	public static String helper = "./helper/helper.lp";
 
-	private static String settings = "set_path";
+	public static String paths = "./set_path";
 
 	public static void readSettings() {
-		File f = new File(settings);
+		File f = new File(paths);
 		if (!f.exists())
 			writeSettings();
 		try {
@@ -35,7 +35,7 @@ public class DebuggerUtil {
 	}
 
 	public static void writeSettings() {
-		File f = new File(settings);
+		File f = new File(paths);
 		try {
 			FileWriter fw = new FileWriter(f, false);
 			fw.append(solver);

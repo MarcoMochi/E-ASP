@@ -83,7 +83,7 @@ def main(prg):
     prg.ground([("base", [])])
     with prg.solve(yield_=True, on_model=on_model) as hnd:
         hnd.wait()
-    with open("./.tmp_file", "w") as w:
+    with open("./.tmp_file2", "w") as w:
         w.write(f"start:{';'.join(heads)}")
         w.write(f"-mid-{';'.join([x for x in final_order if 'clingo.symbolic_atoms' not in x])}")
 #end.

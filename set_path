@@ -1,2 +1,2 @@
-CLINGO_PATH=/Users/marco/opt/miniconda3/envs/potassco/bin/clingo
-HELPER_PATH=/Users/Marco/Documents/GitHub/E-ASP/helper/helper.lp
+CLINGO_PATH=/opt/homebrew/bin/clingo
+HELPER_PATH=./helper/helper.lp

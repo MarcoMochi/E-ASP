@@ -185,7 +185,6 @@ public class EditorController {
 			String[] allLines = area.getText().split("\n");
 			for (Integer i : faultyLines) {				
 				area.setStyle(i - 1, "-fx-fill: red;");
-				System.out.println(allLines[i-1]);
 			}
 			
 			if(!onlyFacts && !d.canBeQueried()) {				
@@ -563,14 +562,13 @@ public class EditorController {
         	}
         	ObservableList<Object> items = FXCollections.observableArrayList (list_temp);
         	list_set.setItems((ObservableList<Object>) items);
-            list_set.setPrefWidth(300);
+            list_set.setPrefWidth(600);
             list_set.setPrefHeight(140);
             if (used_atom.equals(""))
             	pane_temp.setText("Generated set with : " + Integer.toString(n_set) + " elements");
             else
             	pane_temp.setText("Generated set for " + used_atom + "with : " + Integer.toString(n_set) + " elements");
             pane_temp.setContent(list_set);
-            pane_temp.setMaxWidth(600);
             if (rule.contains("<") || rule.contains(">")) {
 	            ToggleButton tb1 = new ToggleButton("All atoms for " + used_atom);
 				tb1.setToggleGroup(group);
@@ -602,9 +600,11 @@ public class EditorController {
 			@Override
 			public void handle(ActionEvent event) {		
 				ToggleButton tb = (ToggleButton) group.getSelectedToggle();
-				String key = tb.getId();
-				showAllAtoms(key, sets.get(0), rule);
-				}		
+				if (tb != null) {
+					String key = tb.getId();
+					showAllAtoms(key, sets.get(0), rule);
+				}
+			}		
 		});	
 
         stage.show();

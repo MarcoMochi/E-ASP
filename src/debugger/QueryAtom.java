@@ -26,11 +26,6 @@ public class QueryAtom {
 	}
 	
 	public void setValue(int value) {
-//		if(this.value != NOT_SET)
-//			return;
-//		if(!check(value))
-//			return;
-//		this.value = value;
 		this.value = value;
 	}
 	
