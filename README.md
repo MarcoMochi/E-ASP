@@ -1,15 +1,30 @@
 # E-ASP
-E-ASP - Tool for debugging and justifying ASP programs. 
+E-ASP - Tool for debugging and justifying ASP programs 
 
-# Install and Settings
+## Install and Settings
 
-To use the tool is required the JavaFX library and Setting the paths to Clingo and the helper.lp file:
+### Prerequisites:
+- Java version: 18
+- Maven
+- Clingo version: 5.6.2 
 
-- JAVAFX library version 18.0.2 downloadable from here: https://gluonhq.com/products/javafx/. For a precise guide on how to install it, we suggest: https://openjfx.io/openjfx-docs/.
-- To correctly use E-ASP is required to change the paths in the file src/debugger/DebuggerUtil.java:
-  - "public static String solver" = "PATH TO CLINGO" I.e. : "/Users/marco/opt/miniconda3/envs/potassco/bin/clingo";
-  - "public static String helper" = "PATH TO Debugger/Encoders/helper.lp" I.e: Users/marco/Documents/Projects/Debugger/Encoders/helper.lp"; 
+### Setting:
+To correctly use E-ASP is required to put the correct paths inside the set_path file:
+  - CLINGO_PATH=$YOUR_CLINGO_PATH
+
+
+The HELPER_PATH should be changed just in case of renaming or changing of the folder:
+  - HELPER_PATH=$PATH_TO_/helper/helper.lp 
+ 
+### Install:
+- To install E-ASP using maven go to the main folder (with file pom.xml) and use command:
+
+  
+   ```console mvn clean javafx:run```
+
+- Alternatively, to build the project manually, JAVAFX library version 18.0.2 is required and it is downloadable here: https://gluonhq.com/products/javafx/. For a precise guide on how to install it, we suggest: https://openjfx.io/openjfx-docs/.
+
+
 
 # How to Use
 
-To run a process and be able to interact with 
