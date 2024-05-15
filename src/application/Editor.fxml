@@ -36,7 +36,7 @@
             </MenuBar>
          </top>
          <bottom>
-            <HBox maxHeight="-Infinity" prefHeight="20.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+            <HBox maxHeight="-Infinity" prefHeight="20.0" prefWidth="200.0" BorderPane.alignment="CENTER" spacing="5">
                <children>
                	<!--'
                   <Button fx:id="debug" mnemonicParsing="false" onAction="#debug" text="Debug" />

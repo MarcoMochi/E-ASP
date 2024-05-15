@@ -261,7 +261,7 @@ public class EditorController {
 		stage.setWidth(600);
 		stage.setHeight(300);
 		stage.initModality(Modality.APPLICATION_MODAL);			
-		VBox vBox = new VBox();
+		VBox vBox = new VBox(5);
 		ToggleGroup group = new ToggleGroup();
 		List<String> querable = new ArrayList<String>();
 		List<String> externals = new ArrayList<String>();
@@ -351,13 +351,11 @@ public class EditorController {
 			
 			vBox.getChildren().add(hBox); 	
 		}
-		HBox hBoxButton = new HBox();
+		HBox hBoxButton = new HBox(5);
 		Button back = new Button("Back");
 		hBoxButton.getChildren().add(back);
-		hBoxButton.setSpacing(2);
 		Button restart = new Button("Justify");
 		hBoxButton.getChildren().add(restart);
-		hBoxButton.setSpacing(2);
 		// Start other core search
 		//Button change = new Button("Other rule");
 		//hBoxButton.getChildren().add(change);
@@ -476,7 +474,7 @@ public class EditorController {
 			stage.setHeight(300);
 			stage.initModality(Modality.APPLICATION_MODAL);	
 			
-			VBox vBox = new VBox();
+			VBox vBox = new VBox(5);
 			ToggleGroup group = new ToggleGroup();
 			for (QueryAtom q : qa) {
 				if (querable_d.contains(q.getAtom()) || querable_f.contains(q.getAtom()) && querable_d != null) {
@@ -545,7 +543,7 @@ public class EditorController {
         Accordion accordion = new Accordion();
         
         VBox vBox = new VBox(accordion);
-        HBox hBox = new HBox();
+        HBox hBox = new HBox(5);
         HashMap<String, HashMap<String, List<String>>> set_opt = sets.get(1);
         ToggleGroup group = new ToggleGroup();
         for (HashMap.Entry<String, HashMap<String, List<String>>> map_pairs : set_opt.entrySet()) {
@@ -569,10 +567,15 @@ public class EditorController {
             if (used_atom.equals(""))
             	pane_temp.setText("Generated set with : " + Integer.toString(n_set) + " elements");
             else
-            	pane_temp.setText("Generated set for " + used_atom + "with : " + Integer.toString(n_set) + " elements");
+            	pane_temp.setText("Generated set for " + used_atom + " with : " + Integer.toString(n_set) + " elements");
             pane_temp.setContent(list_set);
             if (rule.contains("<") || rule.contains(">")) {
-	            ToggleButton tb1 = new ToggleButton("All atoms for " + used_atom);
+            	ToggleButton tb1;
+            	if (used_atom.equals("")) {
+            		tb1 = new ToggleButton("Show all atoms in the set");
+            	} else {
+            		tb1 = new ToggleButton("Show all atoms in the set for " + used_atom);
+            	}
 				tb1.setToggleGroup(group);
 				tb1.setId(map_pairs.getKey());
 				
@@ -588,13 +591,13 @@ public class EditorController {
 		Button inspectAll = new Button("Inspect All");
 		
         if (rule.contains("<") || rule.contains(">")) {
+        	hBoxButton.setSpacing(7);
 	        hBoxButton.getChildren().add(inspectAll);
-			hBoxButton.setSpacing(2);
 			vBox.getChildren().add(inspectAll);
         }
-		ScrollPane scroll = new ScrollPane();
-		scroll.setContent(vBox);
-        Scene scene = new Scene(scroll);
+		//ScrollPane scroll = new ScrollPane();
+		//scroll.setContent(vBox);
+        Scene scene = new Scene(vBox);
 
 		stage.setScene(scene);
 
