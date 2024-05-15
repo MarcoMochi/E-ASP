@@ -130,7 +130,6 @@ public class Debugger {
 		String tmp = fileToString(helper);
 		tmp = tmp + fileToString(f);
 		File tmpFile = stringToTmpFile(tmp);
-		System.out.print(tmp);
 		String output = launchSolver(tmpFile, "--models=1", "--outf=2", true);
 		String output_info = fileToString(new File(".tmp_file2")); 
 		String output_split = output_info.split("start:")[1];
@@ -643,10 +642,10 @@ public class Debugger {
 		ArrayList<String> rules = new ArrayList<String>(); 
 		String head = atom.split(":-")[1].split(Pattern.quote("("))[0].replace("not", "").replace(".", "").trim();
 		int arity;
-		if (atom.split(":-")[0].contains("("))
-			arity = getArity(atom.split(":-")[0].split(Pattern.quote("("))[1]);
+		if (atom.split(":-")[1].contains("("))
+			arity = getArity(atom.split(":-")[1].split(Pattern.quote("("))[1]);
 		else
-			arity = getArity(atom.split(":-")[0]);
+			arity = getArity(atom.split(":-")[1]);
 		
 		for(String line : program.split("\n")) {
 			if (!line.startsWith("{__debug") && !line.contains("__support") && line.contains(":-") && line.split(":-")[0].length() > 0) {
@@ -823,7 +822,7 @@ public class Debugger {
 				else if (aggregate.contains("#sum")) {
 					if (to_delete.contains(">") || to_delete.contains("<")) {
 						HashMap<String, List<String>> entry = totalSet.get(outside.toString().replace(to_delete, ""));
-						message = inspectCount(optSet, outside.toString().replace(to_delete, ""), entry, to_delete);
+						message = inspectSum(optSet, outside.toString().replace(to_delete, ""), entry, to_delete);
 						}
 				}
 				
@@ -965,10 +964,8 @@ public class Debugger {
 		}
 		
 		for(String check_atom : this.order) {
-			int tmp_index = 0;
 			if ((less && counter <= value_guard) || (!less && counter < (value_guard + slack))) {
 				for (Entry<String, List<String>> mapping : entry.entrySet()) {
-					tmp_index ++;
 					if (avoid.contains(mapping.getKey()))
 						break;
 					if (mapping.getValue().contains(check_atom)) {
@@ -1171,6 +1168,7 @@ public class Debugger {
 		}
 		boolean truth = check_truth(entry, guard, true);
 		if (!this.derivedAtoms.contains(this.analyzed)) {
+			// The sign are inverted due to the way gringo show the aggregates
 			if (truth) {
 				if (guard.contains("<=")) {
 					HashMap<String, List<String>> set = findTrueAggUntil(entry, value_guard, 0, false);
@@ -1387,7 +1385,6 @@ public class Debugger {
 			BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()));
 			if (check_error) {
 				BufferedReader br2 = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-				System.out.print(check_error);
 				get_unsupported(br2, encoding);
 			}
 	
