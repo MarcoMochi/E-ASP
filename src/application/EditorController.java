@@ -124,8 +124,8 @@ public class EditorController {
 		salva_menu.setGraphic(GlyphsDude.createIcon(MaterialDesignIcon.CONTENT_SAVE));
 		esci_menu.setGraphic(GlyphsDude.createIcon(MaterialDesignIcon.EXIT_TO_APP));
 		about_menu.setGraphic(GlyphsDude.createIcon(MaterialDesignIcon.INFORMATION));
-		debug.setGraphic(GlyphsDude.createIcon(MaterialDesignIcon.BUG));
-		reduce.setDisable(true);
+		//debug.setGraphic(GlyphsDude.createIcon(MaterialDesignIcon.BUG));
+		//reduce.setDisable(true);
 	}
 
 	public void end() {
@@ -358,8 +358,9 @@ public class EditorController {
 		Button restart = new Button("Justify");
 		hBoxButton.getChildren().add(restart);
 		hBoxButton.setSpacing(2);
-		Button change = new Button("Other rule");
-		hBoxButton.getChildren().add(change);
+		// Start other core search
+		//Button change = new Button("Other rule");
+		//hBoxButton.getChildren().add(change);
 		vBox.getChildren().add(hBoxButton);
 		Scene s = new Scene(vBox);
 		restart.addEventHandler(ActionEvent.ACTION, new EventHandler<ActionEvent>() {
@@ -384,18 +385,19 @@ public class EditorController {
 				//d = new Debugger(d.returnFile(), false, false, d.getOrder());
 				internalDebug(false, qa, true, true, false);	
 			}
-		});			
-		change.addEventHandler(ActionEvent.ACTION, new EventHandler<ActionEvent>() {
-			@Override
-			public void handle(ActionEvent event) {
-				for(String r : unsatCore.getRules()) {	
-						d.setIgnore(r);
-					}
-			//} d.backStack();
-				stage.close();
-				internalDebug(false, qa, true, false, false);
-			}
-		});			
+		});
+		// Handle other core search
+		//change.addEventHandler(ActionEvent.ACTION, new EventHandler<ActionEvent>() {
+		//	@Override
+		//	public void handle(ActionEvent event) {
+		//		for(String r : unsatCore.getRules()) {	
+		//				d.setIgnore(r);
+		//			}
+		//	//} d.backStack();
+		//		stage.close();
+		//		internalDebug(false, qa, true, false, false);
+		//	}
+		//});			
 		back.addEventHandler(ActionEvent.ACTION, new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent event) {
@@ -808,7 +810,7 @@ public class EditorController {
 		Alert alert = new Alert(AlertType.INFORMATION);
 		alert.setTitle("About");
 		alert.setHeaderText(null);
-		alert.setContentText("Debugger");
+		alert.setContentText("E-ASP");
 		alert.showAndWait();
 	}
 
