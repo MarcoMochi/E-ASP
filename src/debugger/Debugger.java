@@ -1535,7 +1535,7 @@ public class Debugger {
 			        Pattern pattern = Pattern.compile(regex);
 			        Matcher matcher = pattern.matcher(tmp_body);
 
-			        if (matcher.find() && !this.falseAtoms.contains(tmp_head)) {
+			        if (matcher.find() && !this.falseAtoms.contains(tmp_head) && !this.initialFacts.contains(tmp_head)) {
 			        	this.falseAtoms.add(tmp_head);
 			        	break;
 			        }
