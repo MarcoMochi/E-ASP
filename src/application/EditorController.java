@@ -159,7 +159,7 @@ public class EditorController {
 						alert.setContentText("One of the following atoms:\n" + unsupported + "cannot be supported.\n"
 								+ "Check all rules where they appear in the head or add a supporting rule.");	
 						alert.show();
-						reduce.setDisable(true);
+						//reduce.setDisable(true);
 						return;
 					}
 				}
@@ -173,7 +173,7 @@ public class EditorController {
 				alert.setTitle("Error");
 				alert.setContentText("Some went wrong during debugging. Please check if your encoding is ASPCore2.");
 				alert.show();
-				reduce.setDisable(true);
+				//reduce.setDisable(true);
 			}
 			@SuppressWarnings("unchecked")
 			VirtualizedScrollPane<InlineCssTextArea> vs = (VirtualizedScrollPane<InlineCssTextArea>) t.getContent();
@@ -189,16 +189,17 @@ public class EditorController {
 			
 			if(!onlyFacts && !d.canBeQueried()) {				
 				end();
-				reduce.setDisable(true);
+				//reduce.setDisable(true);
 			}
 			else if (faultyLines.size() > 1) {
 				if(!onlyFacts)
-					reduce.setDisable(false);
+					end();
+					//reduce.setDisable(false);
 				else
 					end();
 			}
 			else if (faultyLines.size() == 1) {
-				reduce.setDisable(true);
+				//reduce.setDisable(true);
 				end();
 			}
 			else {
@@ -244,7 +245,7 @@ public class EditorController {
 				alert.setContentText("One of the following atoms:\n" + unsupported + "cannot be justified.\n"
 						+ "Its value was assigned during the solving phase freely.");	
 				alert.show();
-				reduce.setDisable(true);
+				//reduce.setDisable(true);
 				return;
 			}
 		}
@@ -253,7 +254,7 @@ public class EditorController {
 			alert.setTitle("Error");
 			alert.setContentText("Some went wrong during the justification. Please check if your encoding is ASPCore2.");
 			alert.show();
-			reduce.setDisable(true);
+			//reduce.setDisable(true);
 		}
 		Stage stage = new Stage();
 		
@@ -270,7 +271,7 @@ public class EditorController {
 			if (unsatCore.getExplanations().size() == 1) {
 				if (unsatCore.getExplanations().get(0) == "unsupported") {
 					Label label = new Label("The atom is not supported by any rule.");
-					reduce.setDisable(true);
+					//reduce.setDisable(true);
 					break;
 				}
 			}
