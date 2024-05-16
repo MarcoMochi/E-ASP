@@ -657,14 +657,23 @@ public class Debugger {
 				int tmp_arity;
 				
 				if (line.split(":-")[0].contains("|")) {
-					for (String tmp_poss : line.split(":-")[0].split("|")) {
+					for (String tmp_poss : line.split(":-")[0].split(Pattern.quote("|"))) {
 						tmp_head = tmp_poss.split(":")[0].split(Pattern.quote("("))[0].trim();
 						if (tmp_head.contains("("))
 							tmp_arity = getArity(tmp_poss.split(":")[0].split(Pattern.quote("("))[1]);
 						else
 							tmp_arity = getArity(tmp_poss.split(":")[0]);
-					
-						if (head.equals(tmp_head) && arity == tmp_arity) {
+						
+						if (!tmp_poss.contains(":")) {
+							
+							if (atom.equals(":- not " + tmp_poss.trim() + ".")) {
+								Pattern pattern = Pattern.compile("__debug\\((\".*\"),(\".*\"),(.*)\\)");
+								Matcher m = pattern.matcher(line);
+								if (m.find())
+									rules.add(m.group(1).replaceAll("\"", "").replace("\\", ""));
+								
+							}
+						} else if (head.equals(tmp_head) && arity == tmp_arity) {
 							Pattern pattern = Pattern.compile("__debug\\((\".*\"),(\".*\"),(.*)\\)");
 							Matcher m = pattern.matcher(line);
 							if (m.find()) {
@@ -681,7 +690,16 @@ public class Debugger {
 						else
 							tmp_arity = getArity(tmp_poss.split(":")[0]);
 						
-						if (head.equals(tmp_head) && arity == tmp_arity) {
+						if (!tmp_poss.contains(":")) {
+							
+							if (atom.equals(":- not " + tmp_poss.trim().replace("{", "").replace("}", "") + ".")) {
+								Pattern pattern = Pattern.compile("__debug\\((\".*\"),(\".*\"),(.*)\\)");
+								Matcher m = pattern.matcher(line);
+								if (m.find())
+									rules.add(m.group(1).replaceAll("\"", "").replace("\\", ""));
+								
+							}
+						} else if (head.equals(tmp_head) && arity == tmp_arity) {
 							Pattern pattern = Pattern.compile("__debug\\((\".*\"),(\".*\"),(.*)\\)");
 							Matcher m = pattern.matcher(line);
 							if (m.find()) {
@@ -707,7 +725,7 @@ public class Debugger {
 				}
 				
 			} else if (line.contains("|")) {
-				for (String tmp_poss : line.split("|")) {
+				for (String tmp_poss : line.split(Pattern.quote("|"))) {
 					String tmp_head = tmp_poss.split(":")[0].split(Pattern.quote("("))[0].trim();
 					int tmp_arity;
 					if (tmp_head.contains("("))
@@ -715,7 +733,16 @@ public class Debugger {
 					else
 						tmp_arity = getArity(tmp_poss.split(":")[0]);
 					
-					if (head.equals(tmp_head) && arity == tmp_arity) {
+					if (!tmp_poss.contains(":")) {
+						
+						if (atom.equals(":- not " + tmp_poss.trim() + ".")) {
+							Pattern pattern = Pattern.compile("__debug\\((\".*\"),(\".*\"),(.*)\\)");
+							Matcher m = pattern.matcher(line);
+							if (m.find())
+								rules.add(m.group(1).replaceAll("\"", "").replace("\\", ""));
+							
+						}
+					} else if (head.equals(tmp_head) && arity == tmp_arity) {
 						Pattern pattern = Pattern.compile("__debug\\((\".*\"),(\".*\"),(.*)\\)");
 						Matcher m = pattern.matcher(line);
 						if (m.find()) {
@@ -732,7 +759,16 @@ public class Debugger {
 						else
 							tmp_arity = getArity(tmp_poss.split(":")[0]);
 						
-						if (head.equals(tmp_head) && arity == tmp_arity) {
+						if (!tmp_poss.contains(":")) {
+							
+							if (atom.equals(":- not " + tmp_poss.trim().replace("{", "").replace("{", "") + ".")) {
+								Pattern pattern = Pattern.compile("__debug\\((\".*\"),(\".*\"),(.*)\\)");
+								Matcher m = pattern.matcher(line);
+								if (m.find())
+									rules.add(m.group(1).replaceAll("\"", "").replace("\\", ""));
+								
+							}
+						} else if (head.equals(tmp_head) && arity == tmp_arity) {
 							Pattern pattern = Pattern.compile("__debug\\((\".*\"),(\".*\"),(.*)\\)");
 							Matcher m = pattern.matcher(line);
 							if (m.find()) {
