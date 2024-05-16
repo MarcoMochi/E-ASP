@@ -268,7 +268,7 @@ public class EditorController {
 		List<String> externals = new ArrayList<String>();
 		externals.add(analyzed + ".");
 		List<String> seen = new ArrayList<String>();
-		
+		Boolean could_justify = false;
 		for (String r : unsatCore.getRules()) {
 			if (seen.contains(r))
 				continue;
@@ -292,6 +292,7 @@ public class EditorController {
 						label = new Label("Supporting Derived Atom: " + checker);
 						externals.add(temp);
 						add_box = true;
+						could_justify = true;
 					}
 					else {
 							label = new Label("Supporting rule: " + r);
@@ -304,6 +305,7 @@ public class EditorController {
 					if (d.getFalseAtoms().contains(checker) && r.split(":- ")[0].length() < 1 & !(checker.equals(analyzed) & r.equals(":- " + checker + "."))) {
 						label = new Label("Supporting false atom: not " + checker);
 						add_box = true;
+						could_justify = true;
 					}
 					else {
 						label = new Label("Supporting rule: " + r);
@@ -362,12 +364,17 @@ public class EditorController {
 		Button back = new Button("Back");
 		hBoxButton.getChildren().add(back);
 		Button restart = new Button("Justify");
-		hBoxButton.getChildren().add(restart);
+		if (could_justify)
+			hBoxButton.getChildren().add(restart);
 		// Start other core search
 		//Button change = new Button("Other rule");
 		//hBoxButton.getChildren().add(change);
+		ScrollPane scroll = new ScrollPane();
+		scroll.setContent(vBox);
+		
 		vBox.getChildren().add(hBoxButton);
-		Scene s = new Scene(vBox);
+
+		Scene s = new Scene(scroll);
 		restart.addEventHandler(ActionEvent.ACTION, new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent event) {	

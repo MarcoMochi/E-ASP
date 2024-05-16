@@ -606,7 +606,7 @@ public class Debugger {
 			Matcher m = pattern.matcher(s);
 			if (m.find()) {
 				
-				System.out.print("Got supported: " + m.group(1).replaceAll("\"", ""));
+				//System.out.print("Got supported: " + m.group(1).replaceAll("\"", ""));
 				
 				if (this.debug_rules) {
 					List<String> head_rules = searchHead(m.group(1).replaceAll("\"", ""), extendedProgram);
@@ -632,7 +632,7 @@ public class Debugger {
 				}
 			}
 		
-		System.out.print("Unsat Core" +unsatCore);
+		//System.out.print("Unsat Core" +unsatCore);
 		
 		
 		return unsatCore;
