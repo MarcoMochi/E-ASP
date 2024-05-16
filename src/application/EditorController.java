@@ -267,7 +267,13 @@ public class EditorController {
 		List<String> querable = new ArrayList<String>();
 		List<String> externals = new ArrayList<String>();
 		externals.add(analyzed + ".");
+		List<String> seen = new ArrayList<String>();
+		
 		for (String r : unsatCore.getRules()) {
+			if (seen.contains(r))
+				continue;
+			seen.add(r);
+			
 			if (unsatCore.getExplanations().size() == 1) {
 				if (unsatCore.getExplanations().get(0) == "unsupported") {
 					Label label = new Label("The atom is not supported by any rule.");

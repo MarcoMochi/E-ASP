@@ -638,6 +638,7 @@ public class Debugger {
 		return unsatCore;
 	}
 	
+	
 	private List<String> searchHead(String atom, String program) {
 		ArrayList<String> rules = new ArrayList<String>(); 
 		String head = atom.split(":-")[1].split(Pattern.quote("("))[0].replace("not", "").replace(".", "").trim();
@@ -648,23 +649,100 @@ public class Debugger {
 			arity = getArity(atom.split(":-")[1]);
 		
 		for(String line : program.split("\n")) {
-			if (!line.startsWith("{__debug") && !line.contains("__support") && line.contains(":-") && line.split(":-")[0].length() > 0) {
+			if (line.startsWith("{__debug") || line.contains("__support"))
+				continue;
+			
+			if (line.contains(":-") && line.split(":-")[0].length() > 0) {	
 				String tmp_head = line.split(":-")[0].split(Pattern.quote("("))[0].trim();
 				int tmp_arity;
-				if (tmp_head.split(":-")[0].contains("("))
-					tmp_arity = getArity(line.split(":-")[0].split(Pattern.quote("("))[1]);
-				else
-					tmp_arity = getArity(line.split(":-")[0]);
 				
-				if (head.equals(tmp_head) && arity == tmp_arity) {
-					Pattern pattern = Pattern.compile("__debug\\((\".*\"),(\".*\"),(.*)\\)");
-					Matcher m = pattern.matcher(line);
-					if (m.find()) {
-						rules.add(m.group(1).replaceAll("\"", "").replace("\\", ""));
+				if (line.split(":-")[0].contains("|")) {
+					for (String tmp_poss : line.split(":-")[0].split("|")) {
+						tmp_head = tmp_poss.split(":")[0].split(Pattern.quote("("))[0].trim();
+						if (tmp_head.contains("("))
+							tmp_arity = getArity(tmp_poss.split(":")[0].split(Pattern.quote("("))[1]);
+						else
+							tmp_arity = getArity(tmp_poss.split(":")[0]);
+					
+						if (head.equals(tmp_head) && arity == tmp_arity) {
+							Pattern pattern = Pattern.compile("__debug\\((\".*\"),(\".*\"),(.*)\\)");
+							Matcher m = pattern.matcher(line);
+							if (m.find()) {
+								rules.add(m.group(1).replaceAll("\"", "").replace("\\", ""));
+							}
+						}	
+					}
+					
+				} else if (line.split(":-")[0].contains("{")) {
+					for (String tmp_poss : line.split(":-")[0].split(";")) {
+						tmp_head = tmp_poss.split(":")[0].replace("{", "").replace("{", "").split(Pattern.quote("("))[0].trim();
+						if (tmp_head.contains("("))
+							tmp_arity = getArity(tmp_poss.split(":")[0].split(Pattern.quote("("))[1]);
+						else
+							tmp_arity = getArity(tmp_poss.split(":")[0]);
+						
+						if (head.equals(tmp_head) && arity == tmp_arity) {
+							Pattern pattern = Pattern.compile("__debug\\((\".*\"),(\".*\"),(.*)\\)");
+							Matcher m = pattern.matcher(line);
+							if (m.find()) {
+								rules.add(m.group(1).replaceAll("\"", "").replace("\\", ""));
+							}
+						}
 					}
 				}
+				else {
+					if (line.split(":-")[0].contains("("))
+						tmp_arity = getArity(line.split(":-")[0].split(Pattern.quote("("))[1]);
+					else
+						tmp_arity = getArity(line.split(":-")[0]);
+					
+					if (head.equals(tmp_head) && arity == tmp_arity) {
+						Pattern pattern = Pattern.compile("__debug\\((\".*\"),(\".*\"),(.*)\\)");
+						Matcher m = pattern.matcher(line);
+						if (m.find()) {
+							rules.add(m.group(1).replaceAll("\"", "").replace("\\", ""));
+						}
+					}
+					
+				}
+				
+			} else if (line.contains("|")) {
+				for (String tmp_poss : line.split("|")) {
+					String tmp_head = tmp_poss.split(":")[0].split(Pattern.quote("("))[0].trim();
+					int tmp_arity;
+					if (tmp_head.contains("("))
+						tmp_arity = getArity(tmp_poss.split(":")[0].split(Pattern.quote("("))[1]);
+					else
+						tmp_arity = getArity(tmp_poss.split(":")[0]);
+					
+					if (head.equals(tmp_head) && arity == tmp_arity) {
+						Pattern pattern = Pattern.compile("__debug\\((\".*\"),(\".*\"),(.*)\\)");
+						Matcher m = pattern.matcher(line);
+						if (m.find()) {
+							rules.add(m.group(1).replaceAll("\"", "").replace("\\", ""));
+						}
+					}
+				}
+			} else if (line.contains("{")) {
+					for (String tmp_poss : line.split(";")) {
+						String tmp_head = tmp_poss.split(":")[0].split(Pattern.quote("("))[0].trim();
+						int tmp_arity;
+						if (tmp_head.contains("("))
+							tmp_arity = getArity(tmp_poss.split(":")[0].split(Pattern.quote("("))[1]);
+						else
+							tmp_arity = getArity(tmp_poss.split(":")[0]);
+						
+						if (head.equals(tmp_head) && arity == tmp_arity) {
+							Pattern pattern = Pattern.compile("__debug\\((\".*\"),(\".*\"),(.*)\\)");
+							Matcher m = pattern.matcher(line);
+							if (m.find()) {
+								rules.add(m.group(1).replaceAll("\"", "").replace("\\", ""));
+							}
+						}
+					}
+				}
+			
 			}
-		}
 		return rules;
 	}
 		
@@ -1185,14 +1263,14 @@ public class Debugger {
 				} else if (guard.contains(">")) {
 					HashMap<String, List<String>> set = findFalseAggUntil(entry, value_guard, 0, true);
 					optSet.put(key, set);
-					return "Showing the first " + value_guard.toString() + " false atoms "; 
+					return "Showing the first " + value_guard.toString() + " - 1 false atoms "; 
 				} 
 			}
 		 else {
 			 if (guard.contains("<=")) {
 					HashMap<String, List<String>> set = findFalseAggUntil(entry, value_guard, 1, false);
 					optSet.put(key, set);
-					return "Showing the first " + value_guard.toString() + " - 1 false atoms causing conflict "; 
+					return "Showing the first " + value_guard.toString() + " false atoms causing conflict "; 
 				} else if (guard.contains("<")) {
 					HashMap<String, List<String>> set = findFalseAggUntil(entry, value_guard, 0, false);
 					optSet.put(key, set);
