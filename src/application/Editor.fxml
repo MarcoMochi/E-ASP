@@ -36,7 +36,7 @@
             </MenuBar>
          </top>
          <bottom>
-            <HBox maxHeight="-Infinity" prefHeight="20.0" prefWidth="200.0" BorderPane.alignment="CENTER" spacing="5">
+            <HBox maxHeight="-Infinity" prefHeight="20.0" prefWidth="200.0" BorderPane.alignment="CENTER" spacing="5" style="-fx-padding: 4 4 4 4;">
                <children>
                	<!--'
                   <Button fx:id="debug" mnemonicParsing="false" onAction="#debug" text="Debug" />
@@ -44,8 +44,8 @@
                   <Button fx:id="debugFacts" mnemonicParsing="false" onAction="#debugFacts" text="DebugFacts" />
                 -->
                   <Button fx:id="justify" mnemonicParsing="false" onAction="#justify" text="Justify" />
-                  <CheckBox fx:id="check_rules" text="Debug rules" />
-                  <CheckBox fx:id="check_AS" text="Debug Answer Set" />
+                  <CheckBox fx:id="check_rules" text="Debug rules" style="-fx-padding: 4 0 0 0;"/>
+                  <CheckBox fx:id="check_AS" text="Debug Answer Set" style="-fx-padding: 4 0 0 0;"/>
                </children>
             </HBox>
          </bottom>

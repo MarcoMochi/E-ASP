@@ -30,6 +30,7 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Accordion;
@@ -263,6 +264,7 @@ public class EditorController {
 		stage.setHeight(300);
 		stage.initModality(Modality.APPLICATION_MODAL);			
 		VBox vBox = new VBox(5);
+		vBox.setPadding(new Insets(3,0,0,5));
 		ToggleGroup group = new ToggleGroup();
 		List<String> querable = new ArrayList<String>();
 		List<String> externals = new ArrayList<String>();
@@ -318,7 +320,8 @@ public class EditorController {
 				externals.add(r);
 			}
 			HBox hBox = new HBox();
-			hBox.setSpacing(2);
+			hBox.setPadding(new Insets(3,0,0,5));
+        	
 			hBox.getChildren().add(label);
 
 			if (add_box) { 
@@ -344,8 +347,7 @@ public class EditorController {
 		        if (matcher.find()) {
 		        	Button inspect = new Button("Inspect");
 		        	hBox.getChildren().add(inspect);
-		    		hBox.setSpacing(2);
-		        	inspect.addEventHandler(ActionEvent.ACTION, new EventHandler<ActionEvent>() {
+		    		inspect.addEventHandler(ActionEvent.ACTION, new EventHandler<ActionEvent>() {
 		    			@Override
 		    			public void handle(ActionEvent event) {	
 		    				List<Object> set_atoms_message = d.generateSet(externals, r);
@@ -371,7 +373,7 @@ public class EditorController {
 		//hBoxButton.getChildren().add(change);
 		ScrollPane scroll = new ScrollPane();
 		scroll.setContent(vBox);
-		
+		hBoxButton.setPadding(new Insets(2,0,4,4));
 		vBox.getChildren().add(hBoxButton);
 
 		Scene s = new Scene(scroll);
@@ -489,6 +491,7 @@ public class EditorController {
 			stage.initModality(Modality.APPLICATION_MODAL);	
 			
 			VBox vBox = new VBox(5);
+			vBox.setPadding(new Insets(2,0,4,4));
 			ToggleGroup group = new ToggleGroup();
 			for (QueryAtom q : qa) {
 				if (querable_d.contains(q.getAtom()) || querable_f.contains(q.getAtom()) && querable_d != null) {
@@ -499,11 +502,12 @@ public class EditorController {
 						label = new Label("Select to see cause of not " + q.getAtom() + ": ");
 					
 					HBox hBox = new HBox();
-				    hBox.setSpacing(2);
+				    hBox.setPadding(new Insets(2,0,4,4));
 				    ToggleButton tb1 = new ToggleButton("Select");
 					tb1.setToggleGroup(group);
 					tb1.setId(q.getAtom());
 					
+					//label.setPadding(new Insets(2,0,0,5));
 					hBox.getChildren().add(label);
 					hBox.getChildren().add(tb1);
 				    vBox.getChildren().add(hBox); 	
@@ -602,11 +606,11 @@ public class EditorController {
 
         vBox.getChildren().add(hBox); 
         HBox hBoxButton = new HBox();
-		Button inspectAll = new Button("Inspect All");
+        vBox.setPadding(new Insets(4,0,4,4));
+        Button inspectAll = new Button("Inspect All");
 		
         if (rule.contains("<") || rule.contains(">")) {
-        	hBoxButton.setSpacing(7);
-	        hBoxButton.getChildren().add(inspectAll);
+        	 hBoxButton.getChildren().add(inspectAll);
 			vBox.getChildren().add(inspectAll);
         }
 		//ScrollPane scroll = new ScrollPane();
@@ -644,7 +648,7 @@ public class EditorController {
         	Label label = new Label(entry.getKey() + " : " + String.join(",", entry.getValue()));
     		
         	HBox hBox = new HBox();
-    		hBox.setSpacing(2);
+    		hBox.setPadding(new Insets(2,0,4,4));
     	    hBox.getChildren().add(label);
     	    vBox.getChildren().add(hBox); 	
         }

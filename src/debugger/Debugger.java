@@ -952,7 +952,7 @@ public class Debugger {
 			return_values.add(optSet);
 		else {
 			return_values.add(totalSet);
-			message = "Showing all the positive and negative atoms";
+			message = "Showing all the positive and negative atoms ";
 		}
 		final_values.add(return_values);
 		final_values.add(message);
