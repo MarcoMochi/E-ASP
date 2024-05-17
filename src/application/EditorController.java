@@ -500,7 +500,7 @@ public class EditorController {
 					
 					HBox hBox = new HBox();
 				    hBox.setSpacing(2);
-				    ToggleButton tb1 = new ToggleButton("Justify");
+				    ToggleButton tb1 = new ToggleButton("Select");
 					tb1.setToggleGroup(group);
 					tb1.setId(q.getAtom());
 					

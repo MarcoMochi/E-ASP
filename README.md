@@ -33,7 +33,7 @@ To run the application use the command:
 ```mvn clean javafx:run```
 
 ### Example
-Once E-ASP is running, you will see a GUI that allows you to write or open an ASP encoding. By clicking on the **File** menu item you can start a new file using *"New"* or open an already existing one with *"Open"*. To make sure the tool is working try to open the file **"Test/base.lp"**.
+Once E-ASP is running, you will see a GUI that allows you to write or open an ASP encoding. By clicking on the **File** menu item you can start a new file using *"New"* or open an already existing one with *"Open"*. To check which path to the solver E-ASP is using you can click on the **Setting** menu item. To make sure the tool is working try to open the file **"Test/base.lp"**.
 
 You will see a button at the bottom of the open window with the text **"Justify"** in it. To its right are **two tickboxes**, one to enable justifications through the Rules and one through the Answer Set. Select one or both of the tickboxes and click on the Justify button. A new window will pop up asking you which atom to justify.
 
