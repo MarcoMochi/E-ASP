@@ -3,86 +3,74 @@ package debugger;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import javafx.util.Pair;
 
 public class Debugger {
 
 	private Process process;
-	private HashMap<String, Integer> myMap;
-	private HashSet<String> oldQueries;
-	private File f;
 	private List<String> debugAtoms;
 	private List<String> initialFacts;
 	private List<String> derivedAtoms;
 	private List<String> falseAtoms;
 	private List<String> rules;
 	private List<String> order;
-	private String analyzed;
+	private QueryAtom analyzed;
 	boolean onlyFacts;
 	private List<String> rulesIgnored;
-	private List<String> order_analyzed;
+	private List<QueryAtom> order_analyzed;
 	private List<UnsatisfiableCore> stackCore;
 	private Boolean debug_rules;
 	private Boolean debug_AS;
 	private List<String> unsupported;
 
-	public Debugger(File f, boolean deb_rules, boolean deb_AS) throws IOException {
-		myMap = new HashMap<String, Integer>();
-		oldQueries = new HashSet<String>();
+	public Debugger(boolean deb_rules, boolean deb_AS) {
 		this.rulesIgnored = new ArrayList<String>();
-		this.order_analyzed = new ArrayList<String>();
+		this.order_analyzed = new ArrayList<QueryAtom>();
 		this.stackCore = new ArrayList<UnsatisfiableCore>();
-		this.f = f;
 		this.debug_rules = deb_rules;
 		this.debug_AS = deb_AS;
 		this.unsupported = new ArrayList<String>();
-		
-		try {
-			getFacts(f);
-			computeAtoms();
-		} 
-		catch (IOException e) {
-			throw e;
-		}
-	}
+	}	
+	
+	//try {
+	//		getFacts(f);
+	//		computeAtoms();
+	//	} 
+	//	catch (IOException e) {
+	//		throw e;
+	//	}
+	//}
 
 	public void stopDebug() {
 		if (process != null)
 			process.destroy();
 	}
 	
-	public File returnFile() {
-		return f;
-	}
-
-	void computeAtoms() throws IOException {
+	
+	void computeAtoms(String program) throws IOException {
 		derivedAtoms = new ArrayList<String>();
 		falseAtoms = new ArrayList<String>();
 		File helper = new File(DebuggerUtil.helper);
 		String tmp = fileToString(helper);
-		tmp = tmp + fileToString(f);
+		tmp = tmp + program;
 		String output = launchSolver(tmp, "--models=1", "--outf=2", true);
-		String output_info = fileToString(new File(".tmp_file2")); 
+		File tmpFile = new File(".tmp_file2");
+		String output_info = fileToString(tmpFile); 
+		tmpFile.deleteOnExit();
 		String output_split = output_info.split("start:")[1];
 		String[] output_tmp = output_split.split("-mid-");
 		String grounded_tmp = output_tmp[0];
@@ -118,15 +106,14 @@ public class Debugger {
 	}
 
 	public UnsatisfiableCore debug() {
-		return debug(new ArrayList<QueryAtom>());
+		return debug(new ArrayList<QueryAtom>(), "");
 	}
 
 	
-	public UnsatisfiableCore debug(List<QueryAtom> queries) {				
+	public UnsatisfiableCore debug(List<QueryAtom> queries, String program) {				
 		try {
 			if(onlyFacts && !queries.isEmpty())
 				throw new Exception("Queries are not possible in case of facts debugging");
-			String program = fileToString(f);
 			program = addDerived(program, queries);
 			program = setRulesForOrder(queries,program);
 			String extendedProgram = extendProgram(program, queries);
@@ -141,7 +128,7 @@ public class Debugger {
 		this.analyzed = null;
 		for(QueryAtom q : queries) {
 			if (q.getValue() == QueryAtom.FALSE) {
-				this.analyzed = q.getAtom();
+				this.analyzed = q;
 				break;
 			}
 		}
@@ -151,9 +138,9 @@ public class Debugger {
 		boolean ignore = false;
 		List<String> atoms = new ArrayList<String>();
 		List<String> order_loc = getOrder();
-		if (order_loc.contains(this.analyzed)) {
+		if (order_loc.contains(this.analyzed.getAtom())) {
 			for(String i : order_loc) {
-				if (i.equals(this.analyzed)) {
+				if (i.equals(this.analyzed.getAtom())) {
 					ignore = true;
 					continue;
 				}
@@ -180,16 +167,6 @@ public class Debugger {
 		return builder.toString();
 	}
 	
-	private String addInformation(String program) {
-		StringBuilder builder = new StringBuilder();
-		for(String line : program.split("\n")) {
-			if (rulesIgnored.contains(line))
-					builder.append(line + "@ignore" + "\n");
-			else
-				builder.append(line + "\n");
-		}
-		return builder.toString();
-	}
 
 	private String addDerived(String program, List<QueryAtom> queries) {
 		StringBuilder builder = new StringBuilder();
@@ -210,14 +187,14 @@ public class Debugger {
 			//else if (derivedAtoms.contains(q.getAtom()) & this.order.contains(q.getAtom()))
 			else if (derivedAtoms.contains(q.getAtom())) {
 				builder.append(":- not " +q.getAtom() + ".");
-				if (this.order_analyzed.contains(q.getAtom()) & !(q.getAtom().equals(order_analyzed.get(order_analyzed.size()-1))))
+				if (this.order_analyzed.contains(q) & !(q.equals(order_analyzed.get(order_analyzed.size()-1))))
 					builder.append("@ignore\n");
 				else
 					builder.append("\n");
 			}
 			else if (falseAtoms.contains(q.getAtom())) {
 				builder.append(":- " +q.getAtom() + ".");
-				if (this.order_analyzed.contains(q.getAtom()) & !(q.getAtom().equals(order_analyzed.get(order_analyzed.size()-1))))
+				if (this.order_analyzed.contains(q) & !(q.equals(order_analyzed.get(order_analyzed.size()-1))))
 					builder.append("@ignore\n");
 				else
 					builder.append("\n");
@@ -247,6 +224,17 @@ public class Debugger {
 		return qa;
 	}
 	
+	public List<QueryAtom> selectableQuery(List<QueryAtom> qa) {
+		List<QueryAtom> temp_qa = new ArrayList<QueryAtom>();
+		for (QueryAtom q : qa) {
+			if (this.derivedAtoms.contains(q.getAtom()) || this.falseAtoms.contains(q.getAtom()) && this.derivedAtoms != null) {
+				temp_qa.add(q);
+			}
+		}
+		
+		return temp_qa;
+	}
+	
 	public List<String> getDerivedAtoms() {
 		return derivedAtoms;
 	}
@@ -255,16 +243,13 @@ public class Debugger {
 		return falseAtoms;
 	}
 
-	private File stringToTmpFile(String program) {
-		File f = new File(".tmp_file");
-		try {
-			FileWriter fw = new FileWriter(f, false);
-			fw.append(program);
-			fw.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return f;
+	private File stringToTmpFile(String program) throws IOException {
+		File tempFile = File.createTempFile("e-asp-", ".tmp.asp");
+		FileWriter fileWriter = new FileWriter(tempFile, true);
+		fileWriter.write(program);
+		fileWriter.close();
+		tempFile.deleteOnExit();
+		return tempFile;
 	}
 
 
@@ -286,8 +271,7 @@ public class Debugger {
 		return builder.toString();
 	}
 	
-	private void getFacts(File f) throws IOException {
-		String program = fileToString(f);
+	public void getFacts(String program) throws IOException {
 		StringBuilder tempProgram = new StringBuilder();
 		initialFacts = new ArrayList<String>();
 		rules = new ArrayList<String>();
@@ -695,15 +679,11 @@ public class Debugger {
 	
 	
 	private boolean isIncoherent(String encoding, String option1, String option2) throws IOException {
-		File tempFile = File.createTempFile("e-asp-", ".tmp.asp");
-		FileWriter fileWriter = new FileWriter(tempFile, true);
-		fileWriter.write(encoding);
-		fileWriter.close();
+		File tempFile = stringToTmpFile(encoding);
 		process = new ProcessBuilder(DebuggerUtil.solver, tempFile.getAbsolutePath(), option1, option2).start();
 		
 		while (process.isAlive()) {
 		}
-		tempFile.deleteOnExit();
 		int exit_code = process.exitValue();
 		process = null;
 		
@@ -714,17 +694,17 @@ public class Debugger {
 		this.rulesIgnored.add(rule);
 	}
 	
-	public String backAnalyzed() {
+	public QueryAtom backAnalyzed() {
 		return order_analyzed.remove(order_analyzed.size()-1);
 	}
 	
-	public String getAnalyzed() {
+	public QueryAtom getAnalyzed() {
 		if (order_analyzed.size() > 0)
 			return this.order_analyzed.get(order_analyzed.size()-1);
 		return null;
 	}
 	
-	public void addAnalyzed(String atom) {
+	public void addAnalyzed(QueryAtom atom) {
 		this.order_analyzed.add(atom);
 	}
 	
@@ -751,12 +731,12 @@ public class Debugger {
 	
 	public void updateQuery(List<QueryAtom> queries) {
 		
-		String new_analyzed = this.getAnalyzed();
+		QueryAtom new_analyzed = this.getAnalyzed();
 		if (new_analyzed == null)
 			return;
 		
 		for(QueryAtom q : queries) {
-			if (!q.getAtom().equals(new_analyzed))
+			if (!q.equals(new_analyzed))
 				q.setValue(QueryAtom.NOT_SET);
 			else
 				q.setValue(QueryAtom.FALSE);
@@ -869,7 +849,7 @@ public class Debugger {
 		for (String block : sets) {
 			String temp_ID = block.split(":")[0];
 			String temp_body = block.split(":")[1];
-			if (!found & temp_body.contains(this.analyzed))
+			if (!found & temp_body.contains(this.analyzed.getAtom()))
 				found = true;
 			if (!set.containsKey(temp_ID)) {
 	            set.put(temp_ID, new ArrayList<String>());
@@ -1184,7 +1164,7 @@ public class Debugger {
 		}
 		//boolean truth = check_truth(entry, guard, true);
 		
-		if (!this.derivedAtoms.contains(this.analyzed)) {
+		if (!this.derivedAtoms.contains(this.analyzed.getAtom())) {
 			// The sign are inverted due to the way gringo show the aggregates
 			if (truth) {
 				if (guard.contains("<=")) {
@@ -1260,7 +1240,7 @@ public class Debugger {
 		int counter = 0;
 		//boolean truth = check_truth(entry, guard, true);
 		Integer order = 0; 
-		if (!this.derivedAtoms.contains(this.analyzed)) {
+		if (!this.derivedAtoms.contains(this.analyzed.getAtom())) {
 			if (truth) {
 				if (guard.contains("<=")) {
 					HashMap<String, List<String>> set = findTrueAggUntilSum(entry, value_guard, 0, false);
@@ -1325,72 +1305,6 @@ public class Debugger {
 		return "";
 	}
 	
-	private boolean check_truth(HashMap<String, List<String>> map, String guard, boolean count) {
-		Pattern p = Pattern.compile("-?\\d+");
-		Matcher m = p.matcher(guard);
-		int value_guard = 0;
-		if (m.find()) {
-		  value_guard = Integer.parseInt(m.group(0));
-		}
-		int counter = 0;
-		if (count) {
-			for (List<String> values : map.values()) {
-			    for (String tmp_atom : values) {
-			    	if (tmp_atom.contains("not ")) {
-			    		if (this.falseAtoms.contains(tmp_atom.replace("not ", ""))) {
-			    			counter ++;
-			    			break;
-			    		}
-			    	}
-			    	else {
-				    	if (this.derivedAtoms.contains(tmp_atom) || this.initialFacts.contains(tmp_atom)) {
-			    			counter ++;
-			    			break;
-			    		}
-			    	}
-			    }
-			}
-	} else {
-			
-		for (Entry<String, List<String>> inside : map.entrySet()) {
-				int value_sum = Integer.parseInt(inside.getKey().split(",")[0]);
-				boolean tmp_found = false;
-				for (String tmp_atom : inside.getValue()) {
-			    	if (tmp_atom.contains(":not ")) {
-			    		if (this.falseAtoms.contains(tmp_atom)) {
-			    			counter += value_sum;
-			    			break;
-			    		}
-				    } else {
-				   		if (this.derivedAtoms.contains(tmp_atom)) {
-				   			counter += value_sum;
-				   			break;				    			
-				   		}
-			    	}
-			    }
-			}
-	}
-				
-		if (guard.contains(">")) {
-			if (guard.contains("="))
-				return counter <= value_guard;
-			return counter < value_guard;
-			}
-		if (guard.contains("<")) {
-			if (guard.contains("="))
-				return counter >= value_guard;
-			return counter > value_guard;
-		}
-		if (guard.contains("=")) {
-			if (guard.contains("!="))
-				return counter != value_guard;
-			return counter == value_guard;
-		}
-		
-		return true;
-		
-	}
-	
 	private String launchSolver(String encoding, String option1, String option2) {
 		return launchSolver(encoding, option1, option2, false);
 	}
@@ -1398,11 +1312,7 @@ public class Debugger {
 	private String launchSolver(String encoding, String option1, String option2, boolean check_error) {
 		StringBuilder builder = new StringBuilder();
 		try {
-			File tempFile = File.createTempFile("e-asp-", ".tmp.asp");
-			FileWriter fileWriter = new FileWriter(tempFile, true);
-			fileWriter.write(encoding);
-			fileWriter.close();
-			
+			File tempFile = stringToTmpFile(encoding);
 			
 			process = new ProcessBuilder(DebuggerUtil.solver, tempFile.getAbsolutePath(), option1, option2).start();
 			BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -1416,7 +1326,6 @@ public class Debugger {
 			while ((line = br.readLine()) != null) {
 				builder.append(line + "\n");
 			}
-			tempFile.deleteOnExit();
 		} catch (Exception e) {
 			System.err.println(e.getMessage());
 		} finally {

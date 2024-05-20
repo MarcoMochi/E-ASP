@@ -9,12 +9,20 @@ public class QueryAtom {
 	
 	private String atom;
 	private int value;
+	
 	public QueryAtom(String atom, int value) {
 		this.atom = atom;
 		if(check(value))
 			this.value = value;
 		else
 			this.value = NOT_SET;			
+	}
+	
+	public String toText(Debugger d) {
+		if (d.getDerivedAtoms().contains(getAtom()))
+			return getAtom();
+		else
+			return "not " + getAtom();
 	}
 	
 	public int getValue() {
