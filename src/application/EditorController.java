@@ -136,88 +136,12 @@ public class EditorController {
 		alert.show();
 	}
 	
-	private void internalDebug(boolean shrink, List<QueryAtom> qa, boolean onlyFacts) {
-		Tab t = tabPane.getSelectionModel().getSelectedItem();
-		if (t == null || !tab2file.containsKey(t)) {
-			Alert alert = new Alert(AlertType.ERROR);
-			alert.setTitle("Error in debug");
-			alert.setContentText("No file is selected!");
-			alert.show();
-		} else {
-			File f = tab2file.get(t);
-			if(shrink) {
-				unsatCore = d.debug(qa);
-				if(unsatCore != null) {
-					if(unsatCore.getLines().size() == 0) {
-						String unsupported = "";
-						for(QueryAtom q : qa) {
-							if(q.getValue()==QueryAtom.TRUE)
-								unsupported += "- " + q.getAtom() + "\n";
-						}
-						
-						Alert alert = new Alert(AlertType.INFORMATION);
-						alert.setTitle("End of debugging");
-						alert.setContentText("One of the following atoms:\n" + unsupported + "cannot be supported.\n"
-								+ "Check all rules where they appear in the head or add a supporting rule.");	
-						alert.show();
-						//reduce.setDisable(true);
-						return;
-					}
-				}
-			}
-			else {
-				d = new Debugger(f, onlyFacts);
-				unsatCore = d.debug();				
-			}
-			if(unsatCore == null) {
-				Alert alert = new Alert(AlertType.ERROR);
-				alert.setTitle("Error");
-				alert.setContentText("Some went wrong during debugging. Please check if your encoding is ASPCore2.");
-				alert.show();
-				//reduce.setDisable(true);
-			}
-			@SuppressWarnings("unchecked")
-			VirtualizedScrollPane<InlineCssTextArea> vs = (VirtualizedScrollPane<InlineCssTextArea>) t.getContent();
-			InlineCssTextArea area = (InlineCssTextArea) vs.getContent();
-			ArrayList<Integer> faultyLines = unsatCore.getLines();
-			for(int i = 0; i < area.getParagraphs().size(); i++)
-				area.setStyle(i, "-fx-fill: black;");
-			
-			String[] allLines = area.getText().split("\n");
-			for (Integer i : faultyLines) {				
-				area.setStyle(i - 1, "-fx-fill: red;");
-			}
-			
-			if(!onlyFacts && !d.canBeQueried()) {				
-				end();
-				//reduce.setDisable(true);
-			}
-			else if (faultyLines.size() > 1) {
-				if(!onlyFacts)
-					end();
-					//reduce.setDisable(false);
-				else
-					end();
-			}
-			else if (faultyLines.size() == 1) {
-				//reduce.setDisable(true);
-				end();
-			}
-			else {
-				Alert alert = new Alert(AlertType.INFORMATION);
-				alert.setTitle("End of debugging");
-				alert.setContentText("No faulty rules detected!");
-				alert.show();
-				reduce.setDisable(true);
-			}			
-		}
-	} 
-
+	
 	private void internalDebug(boolean shrink, List<QueryAtom> qa, boolean onlyFacts, boolean justify, boolean back_flag) {
 		Tab t = tabPane.getSelectionModel().getSelectedItem();
 		File f = tab2file.get(t);
 		if (!back_flag) {
-			unsatCore = d.debug(qa, justify);
+			unsatCore = d.debug(qa);
 			d.addCore(unsatCore);
 		}
 		else
@@ -445,7 +369,7 @@ public class EditorController {
 					alert.show();
 					return;
 				}
-				d = new Debugger(f, false, true, check_rules.isSelected(), check_AS.isSelected());
+				d = new Debugger(f, check_rules.isSelected(), check_AS.isSelected());
 				chooseAtom();
 			} catch (Exception e) {
 				Alert alert = new Alert(AlertType.INFORMATION);
@@ -460,17 +384,6 @@ public class EditorController {
 			}
 		}
 	
-	@FXML
-	void debug(ActionEvent event) {
-		List<QueryAtom> qa = new ArrayList<QueryAtom>();
-		internalDebug(false, qa, false);
-	}
-	
-	@FXML
-	void debugFacts(ActionEvent event) {
-		List<QueryAtom> qa = new ArrayList<QueryAtom>();
-		internalDebug(false, qa, true);
-	}
 	
 	@FXML
 	void justify(ActionEvent event) {
@@ -536,7 +449,6 @@ public class EditorController {
 				
 				if (qa.isEmpty()) {
 					end();
-					reduce.setDisable(true);
 				}
 				else {
 					internalDebug(true, qa, false, true, false);
@@ -664,70 +576,6 @@ public class EditorController {
         stage.show();
 	}
 	
-	@FXML
-	void reduceFaultyRules(ActionEvent event) {
-		try {
-			List<QueryAtom> qa = d.computeQuery(unsatCore);
-			Stage stage = new Stage();
-			stage.setTitle("Query");
-			stage.setWidth(600);
-			stage.setHeight(300);
-			stage.initModality(Modality.APPLICATION_MODAL);			
-			VBox vBox = new VBox();
-			for (QueryAtom q : qa) {
-				Label label = new Label("Select a value for atom " + q.getAtom() + ": ");
-			    HBox hBox = new HBox();
-			    hBox.setSpacing(2);
-			    ToggleButton tb1 = new ToggleButton("T");
-			    ToggleButton tb2 = new ToggleButton("F");
-				ToggleButton tb3 = new ToggleButton("U");
-				ToggleGroup group = new ToggleGroup();
-				tb1.setToggleGroup(group);
-				tb2.setToggleGroup(group);
-				tb3.setToggleGroup(group);
-				tb1.setId(q.getAtom()+"tb1");
-				tb2.setId(q.getAtom()+"tb2");
-				tb3.setId(q.getAtom()+"tb3");
-				
-				hBox.getChildren().add(label);
-				hBox.getChildren().add(tb1);
-			    hBox.getChildren().add(tb2);
-			    hBox.getChildren().add(tb3);
-			    
-			    vBox.getChildren().add(hBox); 			    
-			}
-			Button confirm = new Button("Confirm");
-			vBox.getChildren().add(confirm);
-			Scene s = new Scene(vBox);
-			stage.setScene(s);			
-			confirm.addEventHandler(ActionEvent.ACTION, new EventHandler<ActionEvent>() {
-				@Override
-				public void handle(ActionEvent event) {
-					for(QueryAtom q : qa) {
-						ToggleButton tb1 = (ToggleButton) s.lookup("#"+q.getAtom()+"tb1");
-						ToggleButton tb2 = (ToggleButton) s.lookup("#"+q.getAtom()+"tb2");
-						if(tb1.isSelected())
-							q.setValue(QueryAtom.TRUE);					
-						else if(tb2.isSelected())
-							q.setValue(QueryAtom.FALSE);
-						else
-							q.setValue(QueryAtom.UNDEFINED);
-					}
-					stage.close();
-				}
-			});			
-			stage.showAndWait();
-			if(qa.isEmpty()) {
-				end();
-				reduce.setDisable(true);
-			}
-			else {
-				internalDebug(true, qa, false);				
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
 
 	@FXML
 	void nuovoMenu(ActionEvent event) {
