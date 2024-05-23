@@ -1,4 +1,4 @@
-package debugger;
+package application.model.debugger;
 
 import java.io.BufferedReader;
 import java.io.File;

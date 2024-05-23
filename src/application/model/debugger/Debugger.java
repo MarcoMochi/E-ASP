@@ -1,4 +1,4 @@
-package debugger;
+package application.model.debugger;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -105,42 +105,27 @@ public class Debugger {
 		
 	}
 
-	public UnsatisfiableCore debug() {
-		return debug(new ArrayList<QueryAtom>(), "");
-	}
-
-	
-	public UnsatisfiableCore debug(List<QueryAtom> queries, String program) {				
+		 
+	public UnsatisfiableCore debug(QueryAtom atom, List<QueryAtom> chain, List<QueryAtom> queries, String program) {				
 		try {
-			if(onlyFacts && !queries.isEmpty())
-				throw new Exception("Queries are not possible in case of facts debugging");
-			program = addDerived(program, queries);
-			program = setRulesForOrder(queries,program);
-			String extendedProgram = extendProgram(program, queries);
-			return computeMinimalCore(extendedProgram);
+			program = addDerived(program, atom, chain, queries);
+			program = setRulesForOrder(program, atom);
+			String extendedProgram = extendProgram(program, atom);
+			return computeMinimalCore(extendedProgram, atom);
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
 		}
 	}
 
-	private String setRulesForOrder(List<QueryAtom> queries, String program) {
-		this.analyzed = null;
-		for(QueryAtom q : queries) {
-			if (q.getValue() == QueryAtom.FALSE) {
-				this.analyzed = q;
-				break;
-			}
-		}
-		if (this.analyzed == null) 
-			return program;
+	private String setRulesForOrder(String program, QueryAtom atom) {
 		
 		boolean ignore = false;
 		List<String> atoms = new ArrayList<String>();
 		List<String> order_loc = getOrder();
-		if (order_loc.contains(this.analyzed.getAtom())) {
+		if (order_loc.contains(atom.getAtom())) {
 			for(String i : order_loc) {
-				if (i.equals(this.analyzed.getAtom())) {
+				if (i.equals(atom.getAtom())) {
 					ignore = true;
 					continue;
 				}
@@ -153,8 +138,8 @@ public class Debugger {
 		StringBuilder builder = new StringBuilder();
 		for(String line : program.split("\n")) {
 			boolean temp = false;
-			for (String atom : atoms) {
-				if (line.contains(atom)) {
+			for (String tmp_atom : atoms) {
+				if (line.contains(tmp_atom)) {
 					builder.append(line + "@ignore" + "\n");
 					temp = true;
 					break;
@@ -168,36 +153,27 @@ public class Debugger {
 	}
 	
 
-	private String addDerived(String program, List<QueryAtom> queries) {
+	private String addDerived(String program, QueryAtom atom, List<QueryAtom> chain, List<QueryAtom> queries) {
 		StringBuilder builder = new StringBuilder();
 		builder.append("%Add Answer Set\n");
 		for (QueryAtom q : queries) {
-			if (q.getValue() == QueryAtom.FALSE) {
-				if (falseAtoms.contains(q.getAtom()))
+			if (q.equals(atom)) {
+				if (q.getValue() == QueryAtom.FALSE) 
 					builder.append(":- not " + q.getAtom() + ".\n");
 				else
 					builder.append(":- " + q.getAtom() + ".\n");
 			}
-			else if (q.getValue() == QueryAtom.TRUE) {
-				if (falseAtoms.contains(q.getAtom()))
+			else if (chain.contains(q)) {
+				if (q.getValue() == QueryAtom.FALSE) 
+					builder.append(":- " + q.getAtom() + ".@ignore\n");
+				else
+					builder.append(":- not " + q.getAtom() + ".@ignore\n");
+			}
+			else {
+				if (q.getValue() == QueryAtom.FALSE) 
 					builder.append(":- " + q.getAtom() + ".\n");
 				else
 					builder.append(":- not " + q.getAtom() + ".\n");
-			}
-			//else if (derivedAtoms.contains(q.getAtom()) & this.order.contains(q.getAtom()))
-			else if (derivedAtoms.contains(q.getAtom())) {
-				builder.append(":- not " +q.getAtom() + ".");
-				if (this.order_analyzed.contains(q) & !(q.equals(order_analyzed.get(order_analyzed.size()-1))))
-					builder.append("@ignore\n");
-				else
-					builder.append("\n");
-			}
-			else if (falseAtoms.contains(q.getAtom())) {
-				builder.append(":- " +q.getAtom() + ".");
-				if (this.order_analyzed.contains(q) & !(q.equals(order_analyzed.get(order_analyzed.size()-1))))
-					builder.append("@ignore\n");
-				else
-					builder.append("\n");
 			}
 		}
 		return program + builder.toString();
@@ -207,18 +183,20 @@ public class Debugger {
 	
 	public List<QueryAtom> populateQuery() {
 		ArrayList<QueryAtom> qa = new ArrayList<QueryAtom>();
-		for (String i : initialFacts) {
-			qa.add(new QueryAtom(i, QueryAtom.NOT_SET));
-		}
-		for (String i : derivedAtoms) {
-			qa.add(new QueryAtom(i, QueryAtom.NOT_SET));
+		//for (String i : initialFacts) {
+		//	qa.add(new QueryAtom(i, QueryAtom.TRUE));
+		//}
+		if (derivedAtoms != null) {
+			for (String i : derivedAtoms) {
+				qa.add(new QueryAtom(i, QueryAtom.TRUE));
+			}
 		}
 		for (String i : falseAtoms) {
-			qa.add(new QueryAtom(i, QueryAtom.NOT_SET));
+			qa.add(new QueryAtom(i, QueryAtom.FALSE));
 		}
-		for (String i : rules) {
-			qa.add(new QueryAtom(i, QueryAtom.NOT_SET));
-		}
+		//for (String i : rules) {
+		//	qa.add(new QueryAtom(i, QueryAtom.NOT_SET));
+		//}
 		
 		
 		return qa;
@@ -293,7 +271,7 @@ public class Debugger {
 	}	
 
 
-	private String extendProgram(String p, List<QueryAtom> queries) {
+	private String extendProgram(String p, QueryAtom atom) {
 		debugAtoms = new ArrayList<String>();
 		String[] lines = p.split("\n");
 		StringBuilder builder = new StringBuilder();
@@ -327,29 +305,56 @@ public class Debugger {
 			}
 			
 			String line_parsed = line.replace("\"", "\\\"");
-			if(onlyFacts) {		
-				if (!line.contains("."))
-					continue;
-				
-				if (line.contains(".") && !line.contains(":-")) {
-					String deb = "__debug(\"" + line_parsed + "\",\"" + info + "\"," + cont + ")";
-					debugAtoms.add(deb);
-					line = line.substring(0, line.length() - 1) + ":- not " + deb + ".";
+			if (!start_AS) {
+				if(debug_rules) {
+			
+					String deb = "";
+					if (line.contains(":-")) {
+						if (line.contains("#count") || line.contains("#sum")) 
+							deb = "__debug(\"" + line_parsed + "\",3," + cont + ")";
+						else
+							deb = "__debug(\"" + line_parsed + "\",0," + cont + ")";
+						line = line.substring(0, line.length() - 1) + ", not " + deb + ".";
+						debugAtoms.add(deb);
+					} else if (line.contains(".")) {
+						deb = "__debug(\"" + line_parsed + "\",1," + cont + ")";
+						line = line.substring(0, line.length() - 1) + ":- not " + deb + ".";
+						debugAtoms.add(deb);
+					} else {
+						continue;
+					}
+					
 					builder.append(line + "\n");
 					builder.append("{" + deb + "}.\n");
-				}	
-				else {
+					
+				} else {
+					
 					builder.append(line + "\n");
 				}
 			}
-			else {
+			
+			if (start_AS) {
 				
-				if (!start_AS) {
-					if(debug_rules) {
+				String sup = "__support(\"" + line_parsed + "\",0," + cont + ")";
+				debugAtoms.add(sup);
 				
-					String deb = "__debug(\"" + line_parsed + "\",\" Supporting rule \"," + cont + ")";
+				String atom_tmp = null;
+				if (line.contains(":- not")) 
+					atom_tmp = line.replace(":- not ", "");
+				else if (line.contains(":- ")) 
+					atom_tmp = line.replace(":- ", "");
+				else
+					continue;
+				
+				
+				builder.append(atom_tmp.substring(0, atom_tmp.length()-1) + " :- " + sup + ".\n");
+				builder.append("{" + sup + "}.\n");
+				
+				if(debug_AS) {
+			
+					String deb = "__debug(\"" + atom_tmp + "\",2," + cont + ")";
 					debugAtoms.add(deb);
-		
+			
 					if (line.contains(":-")) {
 						line = line.substring(0, line.length() - 1) + ", not " + deb + ".";
 					} else if (line.contains(".")) {
@@ -359,70 +364,20 @@ public class Debugger {
 					}
 					builder.append(line + "\n");
 					builder.append("{" + deb + "}.\n");
-				} else {
-					builder.append(line + "\n");
-					}
+			} else {
+				builder.append(line + "\n");
 				}
-				
-				if (start_AS) {
-					
-					String sup = "__support(\"" + line_parsed + "\",\"" + info + "\"," + cont + ")";
-					debugAtoms.add(sup);
-					
-					String atom_tmp = null;
-					if (line.contains(":- not")) 
-						atom_tmp = line.replace(":- not ", "");
-					else if (line.contains(":- ")) 
-						atom_tmp = line.replace(":- ", "");
-					else
-						continue;
-					
-					
-					builder.append(atom_tmp.substring(0, atom_tmp.length()-1) + " :- " + sup + ".\n");
-					builder.append("{" + sup + "}.\n");
-					
-					if(debug_AS) {
-				
-						String deb = "__debug(\"" + line_parsed + "\",\" Supporting derived atom \"," + cont + ")";
-						debugAtoms.add(deb);
-				
-						if (line.contains(":-")) {
-							line = line.substring(0, line.length() - 1) + ", not " + deb + ".";
-						} else if (line.contains(".")) {
-							line = line.substring(0, line.length() - 1) + ":- not " + deb + ".";
-						} else {
-							continue;
-						}
-						builder.append(line + "\n");
-						builder.append("{" + deb + "}.\n");
-				} else {
-					builder.append(line + "\n");
-					}
-				}
-					
-				
-
 			}
+				
 			if (!info.equalsIgnoreCase("% no description"))
 				info = "% no description";
 		}
 		
-		for (QueryAtom q : queries) {
-			if (q.getValue() == QueryAtom.TRUE)
-				if (falseAtoms.contains(q.getAtom()))
-					builder.append(":- " + q.getAtom() + ".\n");
-				else
-					builder.append(":- not " + q.getAtom() + ".\n");
-			else if (q.getValue() == QueryAtom.FALSE)
-				if (falseAtoms.contains(q.getAtom()))
-					builder.append(":- not " + q.getAtom() + ".\n");
-				else
-					builder.append(":- " + q.getAtom() + ".\n");
-			else
-				continue;
-
-		}
-
+		if (atom.getValue() == QueryAtom.TRUE)
+			builder.append(":- " + atom.getAtom() + ".\n");
+		else
+			builder.append(":- not " + atom.getAtom() + ".\n");
+		
 		return builder.toString();
 	}
 	
@@ -435,10 +390,10 @@ public class Debugger {
 		return (!isIncoherent(tmp, "--outf=1", "--keep-facts"));			
 	}
 
-	private UnsatisfiableCore computeMinimalCore(String extendedProgram) throws Exception {
+	private UnsatisfiableCore computeMinimalCore(String extendedProgram, QueryAtom atom) throws Exception {
 		UnsatisfiableCore unsatCore = new UnsatisfiableCore();	
-		if (this.unsupported.contains(this.analyzed)) {
-			unsatCore.addRule("Atom has no rules to support it", "Unsupported", 0);
+		if (this.unsupported.contains(atom.getAtom())) {
+			unsatCore.addRule("No rules with atom in the head", 0);
 			return unsatCore;
 		}
 		
@@ -473,16 +428,15 @@ public class Debugger {
 		}
 		
 		for (String s : minimalCore) {
-			Pattern pattern = Pattern.compile("__debug\\((\".*\"),(\".*\"),(.*)\\)");
+			Pattern pattern = Pattern.compile("__debug\\((\".*\"),(.*),(.*)\\)");
 			Matcher m = pattern.matcher(s);
 			if (m.find()) {
-				unsatCore.addRule(m.group(1).replaceAll("\"", "").replace("\\", ""), m.group(2).replaceAll("\"", ""),
-						Integer.parseInt(m.group(3)));
+				unsatCore.addRule(m.group(1).replaceAll("\"", "").replace("\\", ""), Integer.parseInt(m.group(2)));
 			}
 		}
 		
 		for (String s : minimalCore) {
-			Pattern pattern = Pattern.compile("__support\\((\".*\"),(\".*\"),(.*)\\)");
+			Pattern pattern = Pattern.compile("__support\\((\".*\"),(.*),(.*)\\)");
 			Matcher m = pattern.matcher(s);
 			if (m.find()) {
 				
@@ -491,28 +445,29 @@ public class Debugger {
 				if (this.debug_rules) {
 					List<String> head_rules = searchHead(m.group(1).replaceAll("\"", ""), extendedProgram);
 					for (String head : head_rules) {
-						unsatCore.addRule(head, "% no description".replaceAll("\"", ""),
-								0);
+						if (head.contains("#count") || head.contains("#sum"))
+							unsatCore.addRule(head, 3);
+						else if (!head.contains(":-"))
+							unsatCore.addRule(head, 1);
+						else
+							unsatCore.addRule(head, 0);
 					}
 				}
 				
 				if (this.debug_AS) {
 					if (this.unsupported.contains(m.group(1).replaceAll("\"", "").replace(":-", "").replace(".", "").trim())) {
-						unsatCore.addRule(m.group(1).replaceAll("\"", "").replace("\\", ""), "% no description".replaceAll("\"", ""),
-								0);
+						unsatCore.addRule(m.group(1).replaceAll("\"", "").replace("\\", ""), 2);
 						continue;
 					}
 					
-					if (!m.group(1).replaceAll("\"", "").replace(":-", "").replace(" not ", "").replace(".", "").trim().equals(this.analyzed)) {
-						unsatCore.addRule(m.group(1).replaceAll("\"", "").replace("\\", ""), "% no description".replaceAll("\"", ""), 0);
+					if (!m.group(1).replaceAll("\"", "").replace(":-", "").replace(" not ", "").replace(".", "").trim().equals(atom.getAtom())) {
+						unsatCore.addRule(m.group(1).replaceAll("\"", "").replace("\\", ""), 2);
 							continue;
 						}
 					}
 				
 				}
 			}
-		
-		//System.out.print("Unsat Core" +unsatCore);
 		
 		
 		return unsatCore;
@@ -547,14 +502,14 @@ public class Debugger {
 						if (!tmp_poss.contains(":")) {
 							
 							if (atom.equals(":- not " + tmp_poss.trim() + ".")) {
-								Pattern pattern = Pattern.compile("__debug\\((\".*\"),(\".*\"),(.*)\\)");
+								Pattern pattern = Pattern.compile("__debug\\((\".*\"),(.*),(.*)\\)");
 								Matcher m = pattern.matcher(line);
 								if (m.find())
 									rules.add(m.group(1).replaceAll("\"", "").replace("\\", ""));
 								
 							}
 						} else if (head.equals(tmp_head) && arity == tmp_arity) {
-							Pattern pattern = Pattern.compile("__debug\\((\".*\"),(\".*\"),(.*)\\)");
+							Pattern pattern = Pattern.compile("__debug\\((\".*\"),(.*),(.*)\\)");
 							Matcher m = pattern.matcher(line);
 							if (m.find()) {
 								rules.add(m.group(1).replaceAll("\"", "").replace("\\", ""));
@@ -573,14 +528,14 @@ public class Debugger {
 						if (!tmp_poss.contains(":")) {
 							
 							if (atom.equals(":- not " + tmp_poss.trim().replace("{", "").replace("}", "") + ".")) {
-								Pattern pattern = Pattern.compile("__debug\\((\".*\"),(\".*\"),(.*)\\)");
+								Pattern pattern = Pattern.compile("__debug\\((\".*\"),(.*),(.*)\\)");
 								Matcher m = pattern.matcher(line);
 								if (m.find())
 									rules.add(m.group(1).replaceAll("\"", "").replace("\\", ""));
 								
 							}
 						} else if (head.equals(tmp_head) && arity == tmp_arity) {
-							Pattern pattern = Pattern.compile("__debug\\((\".*\"),(\".*\"),(.*)\\)");
+							Pattern pattern = Pattern.compile("__debug\\((\".*\"),(.*),(.*)\\)");
 							Matcher m = pattern.matcher(line);
 							if (m.find()) {
 								rules.add(m.group(1).replaceAll("\"", "").replace("\\", ""));
@@ -595,7 +550,7 @@ public class Debugger {
 						tmp_arity = getArity(line.split(":-")[0]);
 					
 					if (head.equals(tmp_head) && arity == tmp_arity) {
-						Pattern pattern = Pattern.compile("__debug\\((\".*\"),(\".*\"),(.*)\\)");
+						Pattern pattern = Pattern.compile("__debug\\((\".*\"),(.*),(.*)\\)");
 						Matcher m = pattern.matcher(line);
 						if (m.find()) {
 							rules.add(m.group(1).replaceAll("\"", "").replace("\\", ""));
@@ -616,14 +571,14 @@ public class Debugger {
 					if (!tmp_poss.contains(":")) {
 						
 						if (atom.equals(":- not " + tmp_poss.trim() + ".")) {
-							Pattern pattern = Pattern.compile("__debug\\((\".*\"),(\".*\"),(.*)\\)");
+							Pattern pattern = Pattern.compile("__debug\\((\".*\"),(.*),(.*)\\)");
 							Matcher m = pattern.matcher(line);
 							if (m.find())
 								rules.add(m.group(1).replaceAll("\"", "").replace("\\", ""));
 							
 						}
 					} else if (head.equals(tmp_head) && arity == tmp_arity) {
-						Pattern pattern = Pattern.compile("__debug\\((\".*\"),(\".*\"),(.*)\\)");
+						Pattern pattern = Pattern.compile("__debug\\((\".*\"),(.*),(.*)\\)");
 						Matcher m = pattern.matcher(line);
 						if (m.find()) {
 							rules.add(m.group(1).replaceAll("\"", "").replace("\\", ""));
@@ -642,14 +597,14 @@ public class Debugger {
 						if (!tmp_poss.contains(":")) {
 							
 							if (atom.equals(":- not " + tmp_poss.trim().replace("{", "").replace("{", "") + ".")) {
-								Pattern pattern = Pattern.compile("__debug\\((\".*\"),(\".*\"),(.*)\\)");
+								Pattern pattern = Pattern.compile("__debug\\((\".*\"),(.*),(.*)\\)");
 								Matcher m = pattern.matcher(line);
 								if (m.find())
 									rules.add(m.group(1).replaceAll("\"", "").replace("\\", ""));
 								
 							}
 						} else if (head.equals(tmp_head) && arity == tmp_arity) {
-							Pattern pattern = Pattern.compile("__debug\\((\".*\"),(\".*\"),(.*)\\)");
+							Pattern pattern = Pattern.compile("__debug\\((\".*\"),(.*),(.*)\\)");
 							Matcher m = pattern.matcher(line);
 							if (m.find()) {
 								rules.add(m.group(1).replaceAll("\"", "").replace("\\", ""));

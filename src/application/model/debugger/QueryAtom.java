@@ -1,4 +1,6 @@
-package debugger;
+package application.model.debugger;
+
+import java.util.Objects;
 
 public class QueryAtom {
 	
@@ -41,5 +43,26 @@ public class QueryAtom {
 		if(value != FALSE && value != TRUE && value != UNDEFINED)
 			return false;
 		return true;
+	}
+	
+	@Override
+	public String toString() {
+		if (getValue() == 0)
+			return "not " + getAtom();
+		else
+			return getAtom();
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		QueryAtom queryAtom = (QueryAtom) o;
+		return value == queryAtom.value && Objects.equals(atom, queryAtom.atom);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(atom, value);
 	}
 }

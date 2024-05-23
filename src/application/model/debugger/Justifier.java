@@ -1,4 +1,4 @@
-package debugger;
+package application.model.debugger;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -20,17 +20,21 @@ public class Justifier {
 		this.d.getFacts(this.program);
 		this.d.computeAtoms(this.program);
 		qa = this.d.populateQuery();
-		return this.d.selectableQuery(qa);
+		return qa;
 	}
 	
 	
-	// String più tipo: 0 - regola, 1 - fatto, 2 - atomo_to_explain, 3 - regola_con_aggregato
+	// String più tipo: 0 - regola, 1 - fatto, 2 - atom_to_explain, 3 - regola_con_aggregato
 	public List<Response> justify(List<QueryAtom> chain, QueryAtom atom) {
-		return null;
+		UnsatisfiableCore unsatCore = d.debug(atom, chain, qa, program);
+		return unsatCore.getRules();
 	}
 	
-	public List<Map<String, List<String>>> expandAggregate(String rule, List<String> answer_set) {
-		return null;	
+	public List<Map<String, List<String>>> expandAggregate(String rule, List<QueryAtom> answerSet) {
+		ArrayList<Map<String, List<String>>> arrayList = new ArrayList<>();
+		for(int i = 0; i < 10; i++)
+			arrayList.add(Map.of("test" + i, List.of("a" + i, "b" + i, "c" + i)));
+		return arrayList;
 	}
 	
 	

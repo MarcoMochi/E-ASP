@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+
+<AnchorPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="application.controller.EditorController">
+    <BorderPane prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <center>
+          <TabPane fx:id="tabPane" prefHeight="68.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
+        </center>
+        <top>
+            <MenuBar fx:id="menuBar" BorderPane.alignment="CENTER">
+                <Menu mnemonicParsing="false" text="File">
+                    <MenuItem fx:id="newMenuItem" mnemonicParsing="false" onAction="#newMenu" text="New" />
+                    <MenuItem fx:id="openMenuItem" mnemonicParsing="false" onAction="#openMenu" text="Open" />
+                    <MenuItem fx:id="saveMenuItem" mnemonicParsing="false" onAction="#saveMenu" text="Save" />
+                    <MenuItem fx:id="exitMenuItem" mnemonicParsing="false" onAction="#exitMenu" text="Exit" />
+                </Menu>
+                <Menu mnemonicParsing="false" text="View">
+                    <MenuItem fx:id="settingsMenuItem" mnemonicParsing="false" onAction="#settingsMenu" text="Settings" />
+                    <MenuItem fx:id="aboutMenuItem" mnemonicParsing="false" onAction="#aboutMenu" text="About" />
+                </Menu>
+            </MenuBar>
+        </top>
+        <bottom>
+            <HBox maxHeight="-Infinity" prefHeight="20.0" prefWidth="200.0" spacing="5" style="-fx-padding: 4 4 4 4;" BorderPane.alignment="CENTER">
+                <Button mnemonicParsing="false" onAction="#justify" text="Justify" />
+                <CheckBox fx:id="checkRules" selected="true" style="-fx-padding: 4 0 0 0;" text="Include rules" />
+                <CheckBox fx:id="checkLiterals" selected="true" style="-fx-padding: 4 0 0 0;" text="Include literals" />
+            <ProgressBar fx:id="progressBar" prefWidth="200.0" progress="0.0" HBox.hgrow="ALWAYS">
+               <HBox.margin>
+                  <Insets right="5.0" />
+               </HBox.margin>
+            </ProgressBar>
+            </HBox>
+        </bottom>
+    </BorderPane>
+</AnchorPane>

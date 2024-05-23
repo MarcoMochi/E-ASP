@@ -1,2 +1,0 @@
-CLINGO_PATH=/opt/homebrew/bin/clingo
-HELPER_PATH=./helper/helper.lp

@@ -1,4 +1,4 @@
-package debugger;
+package application.model.debugger;
 
 public class Response {
 
@@ -8,6 +8,11 @@ public class Response {
 	public Response(String rule, int type) {
 		this.rule = rule;
 		this.type = type;
+	}
+	
+	@Override
+	public String toString() {
+		return rule;
 	}
 	
 	public int getValue() {
