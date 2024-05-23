@@ -179,3 +179,4 @@ cython_debug/
 /javafx-sdk-18.0.2
 *.class
 .tmp_file*
+pom.xml
