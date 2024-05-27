@@ -13,6 +13,7 @@ import javafx.scene.control.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 public class ExplanationController {
 
@@ -118,16 +119,17 @@ public class ExplanationController {
         TreeItem<String> ruleWithAggregate = new TreeItem<>(res.getRule());
         task.setOnSucceeded(e -> {
             @SuppressWarnings("unchecked")
-            List<Map<String, List<String>>> aggregates = (List<Map<String, List<String>>>) e.getSource().getValue();
-            for(Map<String, List<String>> map : aggregates) {
-                for(String key : map.keySet()) {
-                    TreeItem<String> subtree = new TreeItem<>(key);
-                    ruleWithAggregate.getChildren().add(subtree);
-                    for(String value : map.get(key)) {
-                        subtree.getChildren().add(new TreeItem<>(value));
+            Map<String,Map<String, List<String>>> aggregates = (Map<String,Map<String, List<String>>>) e.getSource().getValue();
+            for(Entry<String, Map<String, List<String>>> map : aggregates.entrySet()) {
+            	String key = map.getKey();
+            	TreeItem<String> subtree = new TreeItem<>(key);
+                ruleWithAggregate.getChildren().add(subtree);
+                for(Entry<String, List<String>> values : map.getValue().entrySet()) {
+                   String to_add = values.getKey() + " : ";
+                   to_add += String.join(",", values.getValue());
+                   subtree.getChildren().add(new TreeItem<>(to_add));
                     }
                 }
-            }
         });
         rules.getChildren().add(ruleWithAggregate);
         return task;

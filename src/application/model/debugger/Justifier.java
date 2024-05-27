@@ -39,11 +39,10 @@ public class Justifier {
 		return unsatCore.getRules();
 	}
 	
-	public List<Map<String, List<String>>> expandAggregate(String rule, List<QueryAtom> answerSet) {
-		ArrayList<Map<String, List<String>>> arrayList = new ArrayList<>();
-		for(int i = 0; i < 10; i++)
-			arrayList.add(Map.of("test" + i, List.of("a" + i, "b" + i, "c" + i)));
-		return arrayList;
+	public Map<String,Map<String, List<String>>> expandAggregate(String rule, List<QueryAtom> answerSet) {
+		
+		Map<String,Map<String, List<String>>> setToShow = d.generateSet(rule);
+		return setToShow;
 	}
 	
 	

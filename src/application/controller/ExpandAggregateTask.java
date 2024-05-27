@@ -7,7 +7,7 @@ import javafx.concurrent.Task;
 import java.util.List;
 import java.util.Map;
 
-public class ExpandAggregateTask extends Task<List<Map<String, List<String>>>> {
+public class ExpandAggregateTask extends Task<Map<String,Map<String, List<String>>>> {
 
     private final Justifier justifier;
     private final String rule;
@@ -20,7 +20,7 @@ public class ExpandAggregateTask extends Task<List<Map<String, List<String>>>> {
         this.answerSet = answerSet;
     }
 
-    protected List<Map<String, List<String>>> call() throws Exception {
+    protected Map<String,Map<String, List<String>>> call() throws Exception {
         return justifier.expandAggregate(rule, answerSet);
     }
 }

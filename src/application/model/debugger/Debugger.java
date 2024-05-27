@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -108,6 +109,7 @@ public class Debugger {
 		 
 	public UnsatisfiableCore debug(QueryAtom atom, List<QueryAtom> chain, List<QueryAtom> queries, String program) {				
 		try {
+			this.analyzed = atom;
 			program = addDerived(program, atom, chain, queries);
 			program = setRulesForOrder(program, atom);
 			String extendedProgram = extendProgram(program, atom);
@@ -155,7 +157,7 @@ public class Debugger {
 
 	private String addDerived(String program, QueryAtom atom, List<QueryAtom> chain, List<QueryAtom> queries) {
 		StringBuilder builder = new StringBuilder();
-		builder.append("%Add Answer Set\n");
+		builder.append("\n%Add Answer Set\n");
 		for (QueryAtom q : queries) {
 			if (q.equals(atom)) {
 				if (q.getValue() == QueryAtom.FALSE) 
@@ -285,8 +287,10 @@ public class Debugger {
 				info = line.replaceAll("@description:", "");
 				continue;
 			}
-			if (line.equals("%Add Answer Set"))
+			if (line.equals("%Add Answer Set")) {
 				start_AS = true;
+				continue;
+			}
 			if (line.startsWith("%"))
 				continue;
 			if (line.isEmpty())
@@ -711,9 +715,9 @@ public class Debugger {
 		}
 	}
 	
-	public List<Object> generateSet(List<String> rules, String aggregate) {
-		HashMap<String,HashMap<String, List<String>>> totalSet = new HashMap<String, HashMap<String, List<String>>>();
-		HashMap<String,HashMap<String, List<String>>> optSet = new HashMap<String, HashMap<String, List<String>>>();
+	public Map<String,Map<String, List<String>>> generateSet(String aggregate) {
+		Map<String,Map<String, List<String>>> totalSet = new HashMap<String, Map<String, List<String>>>();
+		Map<String,Map<String, List<String>>> optSet = new HashMap<String, Map<String, List<String>>>();
 		
 		StringBuilder builder = new StringBuilder();
 		builder.append(aggregate + "\n");
@@ -730,7 +734,7 @@ public class Debugger {
 		Pattern pattern = Pattern.compile("\\{(.*?)\\}");
 		String to_delete = "";
 		String message = "";
-		HashMap<String, String> created = new HashMap<String, String>();
+		Map<String, String> created = new HashMap<String, String>();
 		for (String atom : grounded) {
 			if (atom.startsWith("#external"))
 				continue;
@@ -779,13 +783,13 @@ public class Debugger {
 				
 				if (aggregate.contains("#count")) {
 					if (to_delete.contains(">") || to_delete.contains("<")) {
-						HashMap<String, List<String>> entry = totalSet.get(outside.toString().replace(to_delete, ""));
+						Map<String, List<String>> entry = totalSet.get(outside.toString().replace(to_delete, ""));
 						message = inspectCount(optSet, outside.toString().replace(to_delete, ""), entry, to_delete, internal);
 						}
 				}
 				else if (aggregate.contains("#sum")) {
 					if (to_delete.contains(">") || to_delete.contains("<")) {
-						HashMap<String, List<String>> entry = totalSet.get(outside.toString().replace(to_delete, ""));
+						Map<String, List<String>> entry = totalSet.get(outside.toString().replace(to_delete, ""));
 						message = inspectSum(optSet, outside.toString().replace(to_delete, ""), entry, to_delete, internal);
 						}
 				}
@@ -797,21 +801,17 @@ public class Debugger {
 		setFalseTrue(totalSet);
 		List<Object> final_values = new ArrayList<Object>();
 		List<HashMap<String,HashMap<String, List<String>>>> return_values = new ArrayList<HashMap<String,HashMap<String, List<String>>>>();
-		return_values.add(totalSet);
+		
 		if (to_delete.contains(">") || to_delete.contains("<")) 
-			return_values.add(optSet);
+			return optSet;
 		else {
-			return_values.add(totalSet);
-			message = "Showing all the positive and negative atoms ";
+			return totalSet;
 		}
-		final_values.add(return_values);
-		final_values.add(message);
-
-		return final_values;
+		
 	}
 	
-	private boolean getIdSet(String body, String new_key, HashMap<String,HashMap<String, List<String>>> totalSet) {
-		HashMap<String, List<String>> set = new HashMap<String, List<String>>();
+	private boolean getIdSet(String body, String new_key, Map<String,Map<String, List<String>>> totalSet) {
+		Map<String, List<String>> set = new HashMap<String, List<String>>();
 		String[] sets = body.split(";");
 		boolean found = false;
 		for (String block : sets) {
@@ -828,9 +828,9 @@ public class Debugger {
 		return found;
 	}
 	
-	private void setFalseTrue(HashMap<String,HashMap<String, List<String>>> set) {
+	private void setFalseTrue(Map<String,Map<String, List<String>>> set) {
 		
-		for (Entry<String, HashMap<String, List<String>>> map : set.entrySet()) {
+		for (Entry<String, Map<String, List<String>>> map : set.entrySet()) {
 			String key_global = map.getKey();
 			for (Entry<String, List<String>> mapping : map.getValue().entrySet()) {
 				String key_local = mapping.getKey();
@@ -846,7 +846,7 @@ public class Debugger {
 		}
 	}
 	
-	private HashMap<String, List<String>> findTrueAggUntil(HashMap<String, List<String>> entry, int value_guard, int slack, boolean less) {
+	private HashMap<String, List<String>> findTrueAggUntil(Map<String, List<String>> entry, int value_guard, int slack, boolean less) {
 		List<Integer> avoid = new ArrayList<Integer>();
 		HashMap<String, List<String>> set = new HashMap<String, List<String>>();
 		int counter = 0;
@@ -909,9 +909,9 @@ public class Debugger {
 	}
 	
 	
-	private HashMap<String, List<String>> findTrueAggUntilSum(HashMap<String, List<String>> entry, int value_guard, int slack, boolean less) {
+	private Map<String, List<String>> findTrueAggUntilSum(Map<String, List<String>> entry, int value_guard, int slack, boolean less) {
 		List<String> avoid = new ArrayList<String>();
-		HashMap<String, List<String>> set = new HashMap<String, List<String>>();
+		Map<String, List<String>> set = new HashMap<String, List<String>>();
 		int counter = 0;
 		
 		ArrayList<ArrayList<String>> last_set = new ArrayList<ArrayList<String>>();
@@ -967,8 +967,8 @@ public class Debugger {
 		return set;
 	}
 	
-	private HashMap<String, List<String>> findFalseAggUntil(HashMap<String, List<String>> entry, int value_guard, int slack, boolean less) {
-		HashMap<String, List<String>> set = new HashMap<String, List<String>>();
+	private Map<String, List<String>> findFalseAggUntil(Map<String, List<String>> entry, int value_guard, int slack, boolean less) {
+		Map<String, List<String>> set = new HashMap<String, List<String>>();
 		int counter = 0;
 		int total_atoms = 0;
 		ArrayList<ArrayList<String>> last_set = new ArrayList<ArrayList<String>>();
@@ -1032,8 +1032,8 @@ public class Debugger {
 		return set;
 	}
 	
-	private HashMap<String, List<String>> findFalseAggUntilSum(HashMap<String, List<String>> entry, int value_guard, int slack, boolean less) {
-		HashMap<String, List<String>> set = new HashMap<String, List<String>>();
+	private Map<String, List<String>> findFalseAggUntilSum(Map<String, List<String>> entry, int value_guard, int slack, boolean less) {
+		Map<String, List<String>> set = new HashMap<String, List<String>>();
 		int counter = 0;
 		int total_atoms = 0;
 		for (List<String> values : entry.values())
@@ -1065,8 +1065,8 @@ public class Debugger {
 		return set;
 	}
 	
-	private HashMap<String, List<String>> findTrueAggAll(HashMap<String, List<String>> entry, boolean sum_agg) {
-		HashMap<String, List<String>> set = new HashMap<String, List<String>>();
+	private Map<String, List<String>> findTrueAggAll(Map<String, List<String>> entry, boolean sum_agg) {
+		Map<String, List<String>> set = new HashMap<String, List<String>>();
 		Integer order_set = 0;
 		for (Entry<String, List<String>> map : entry.entrySet()) {
 			String val = map.getKey();
@@ -1087,8 +1087,8 @@ public class Debugger {
 		return set;
 	}
 	
-	private HashMap<String, List<String>> findFalseAggAll(HashMap<String, List<String>> entry, boolean sum_agg) {
-		HashMap<String, List<String>> set = new HashMap<String, List<String>>();
+	private Map<String, List<String>> findFalseAggAll(Map<String, List<String>> entry, boolean sum_agg) {
+		Map<String, List<String>> set = new HashMap<String, List<String>>();
 		Integer order_set = 0;
 		for (Entry<String, List<String>> map : entry.entrySet()) {
 			String val = map.getKey();
@@ -1109,8 +1109,8 @@ public class Debugger {
 		return set;
 	}
 	
-	private HashMap<String, List<String>> findAggAll(HashMap<String, List<String>> entry) {
-		HashMap<String, List<String>> set = new HashMap<String, List<String>>();
+	private Map<String, List<String>> findAggAll(Map<String, List<String>> entry) {
+		Map<String, List<String>> set = new HashMap<String, List<String>>();
 		Integer order_set = 0;
 		for (List<String> values : entry.values()) {
 		    for (String tmp_atom : values) {
@@ -1123,7 +1123,7 @@ public class Debugger {
 		return set;
 	}
 	
-	private String inspectCount(HashMap<String,HashMap<String, List<String>>> optSet, String key, HashMap<String, List<String>> entry, String guard, Boolean truth) {
+	private String inspectCount(Map<String,Map<String, List<String>>> optSet, String key, Map<String, List<String>> entry, String guard, Boolean truth) {
 		Pattern p = Pattern.compile("-?\\d+");
 		Matcher m = p.matcher(guard);
 		Integer value_guard = 0;
@@ -1136,38 +1136,38 @@ public class Debugger {
 			// The sign are inverted due to the way gringo show the aggregates
 			if (truth) {
 				if (guard.contains("<=")) {
-					HashMap<String, List<String>> set = findTrueAggUntil(entry, value_guard, 0, false);
+					Map<String, List<String>> set = findTrueAggUntil(entry, value_guard, 0, false);
 					optSet.put(key, set);
 					return "Showing the first " + value_guard.toString() + " true atoms "; 
 				} else if (guard.contains("<")) {
-					HashMap<String, List<String>> set = findTrueAggUntil(entry, value_guard, 0, true);
+					Map<String, List<String>> set = findTrueAggUntil(entry, value_guard, 0, true);
 					optSet.put(key, set);
 					return "Showing the first " + value_guard.toString() + " - 1 true atoms "; 
 				} else if (guard.contains(">=")) {
-					HashMap<String, List<String>> set = findFalseAggUntil(entry, value_guard, 0, false);
+					Map<String, List<String>> set = findFalseAggUntil(entry, value_guard, 0, false);
 					optSet.put(key, set);
 					return "Showing the first " + value_guard.toString() + " false atoms "; 
 				} else if (guard.contains(">")) {
-					HashMap<String, List<String>> set = findFalseAggUntil(entry, value_guard, 0, true);
+					Map<String, List<String>> set = findFalseAggUntil(entry, value_guard, 0, true);
 					optSet.put(key, set);
 					return "Showing the first " + value_guard.toString() + " - 1 false atoms "; 
 				} 
 			}
 		 else {
 			 if (guard.contains("<=")) {
-					HashMap<String, List<String>> set = findFalseAggUntil(entry, value_guard, 1, false);
+					Map<String, List<String>> set = findFalseAggUntil(entry, value_guard, 1, false);
 					optSet.put(key, set);
 					return "Showing the first " + value_guard.toString() + " false atoms causing conflict "; 
 				} else if (guard.contains("<")) {
-					HashMap<String, List<String>> set = findFalseAggUntil(entry, value_guard, 0, false);
+					Map<String, List<String>> set = findFalseAggUntil(entry, value_guard, 0, false);
 					optSet.put(key, set);
 					return "Showing the first " + value_guard.toString() + " false atoms causing conflict ";  
 				} else if (guard.contains(">=")) {
-					HashMap<String, List<String>> set = findTrueAggUntil(entry, value_guard, -1, false);
+					Map<String, List<String>> set = findTrueAggUntil(entry, value_guard, -1, false);
 					optSet.put(key, set);
 					return "Showing the first " + value_guard.toString() + " true atoms causing conflict "; 
 				} else if (guard.contains(">")) {
-					HashMap<String, List<String>> set = findTrueAggUntil(entry, value_guard, 0, false);
+					Map<String, List<String>> set = findTrueAggUntil(entry, value_guard, 0, false);
 					optSet.put(key, set);
 					return "Showing all the first " + value_guard.toString() + " true atoms causing conflict ";  
 				}
@@ -1175,21 +1175,21 @@ public class Debugger {
 		} else {
 			if (truth) {
 				if (guard.contains("<")) {
-					HashMap<String, List<String>> set = findFalseAggAll(entry, false);
+					Map<String, List<String>> set = findFalseAggAll(entry, false);
 					optSet.put(key, set);
 					return "Showing all the false atoms ";
 				} else if (guard.contains(">")) {
-					HashMap<String, List<String>> set = findTrueAggAll(entry, false);
+					Map<String, List<String>> set = findTrueAggAll(entry, false);
 					optSet.put(key, set);
 					return "Showing all the positive atoms ";
 				} 
 		} else {
 			if (guard.contains("<")) {
-				HashMap<String, List<String>> set = findTrueAggAll(entry, false);
+				Map<String, List<String>> set = findTrueAggAll(entry, false);
 				optSet.put(key, set);
 				return "Showing all the positive atoms "; 
 			} else if (guard.contains(">")) {
-				HashMap<String, List<String>> set = findFalseAggAll(entry, false);
+				Map<String, List<String>> set = findFalseAggAll(entry, false);
 				optSet.put(key, set);
 				return "Showing all the false atoms ";
 				}
@@ -1198,7 +1198,7 @@ public class Debugger {
 		return "";
 	}
 	
-	private String inspectSum(HashMap<String,HashMap<String, List<String>>> optSet, String key, HashMap<String, List<String>> entry, String guard, Boolean truth) {
+	private String inspectSum(Map<String,Map<String, List<String>>> optSet, String key, Map<String, List<String>> entry, String guard, Boolean truth) {
 		Pattern p = Pattern.compile("-?\\d+");
 		Matcher m = p.matcher(guard);
 		Integer value_guard = 0;
@@ -1211,38 +1211,38 @@ public class Debugger {
 		if (!this.derivedAtoms.contains(this.analyzed.getAtom())) {
 			if (truth) {
 				if (guard.contains("<=")) {
-					HashMap<String, List<String>> set = findTrueAggUntilSum(entry, value_guard, 0, false);
+					Map<String, List<String>> set = findTrueAggUntilSum(entry, value_guard, 0, false);
 					optSet.put(key, set);
 					return "Showing the first true atoms ";  
 				} else if (guard.contains("<")) {
-					HashMap<String, List<String>> set = findTrueAggUntilSum(entry, value_guard, 0, true);
+					Map<String, List<String>> set = findTrueAggUntilSum(entry, value_guard, 0, true);
 					optSet.put(key, set);
 					return "Showing the first true atoms ";  
 				} else if (guard.contains(">=")) {
-					HashMap<String, List<String>> set = findFalseAggUntilSum(entry, value_guard, 0, false);
+					Map<String, List<String>> set = findFalseAggUntilSum(entry, value_guard, 0, false);
 					optSet.put(key, set);
 					return "Showing the first false atoms satisfying the aggregate "; 
 				} else if (guard.contains(">")) {
-					HashMap<String, List<String>> set = findFalseAggUntilSum(entry, value_guard, 0, true);
+					Map<String, List<String>> set = findFalseAggUntilSum(entry, value_guard, 0, true);
 					optSet.put(key, set);
 					return "Showing the first false atoms satisfying the aggregate "; 
 				} 
 			}
 		 else {
 			 if (guard.contains("<=")) {
-					HashMap<String, List<String>> set = findFalseAggUntilSum(entry, value_guard, -1, false);
+					Map<String, List<String>> set = findFalseAggUntilSum(entry, value_guard, -1, false);
 					optSet.put(key, set);
 					return "Showing the first false atoms causing conflict ";  
 				} else if (guard.contains("<")) {
-					HashMap<String, List<String>> set = findFalseAggUntilSum(entry, value_guard, 0, false);
+					Map<String, List<String>> set = findFalseAggUntilSum(entry, value_guard, 0, false);
 					optSet.put(key, set);
 					return "Showing the first false atoms causing conflict ";   
 				} else if (guard.contains(">=")) {
-					HashMap<String, List<String>> set = findTrueAggUntilSum(entry, value_guard, 1, false);
+					Map<String, List<String>> set = findTrueAggUntilSum(entry, value_guard, 1, false);
 					optSet.put(key, set);
 					return "Showing the first true atoms causing conflict ";   
 				} else if (guard.contains(">")) {
-					HashMap<String, List<String>> set = findTrueAggUntilSum(entry, value_guard, 0, false);
+					Map<String, List<String>> set = findTrueAggUntilSum(entry, value_guard, 0, false);
 					optSet.put(key, set);
 					return "Showing the first atoms causing conflict ";  
 				}
@@ -1250,21 +1250,21 @@ public class Debugger {
 		} else {
 			if (truth) {
 				if (guard.contains("<")) {
-					HashMap<String, List<String>> set = findFalseAggAll(entry, true);
+					Map<String, List<String>> set = findFalseAggAll(entry, true);
 					optSet.put(key, set);
 					return "Showing all the false atoms ";
 				} else if (guard.contains(">")) {
-					HashMap<String, List<String>> set = findTrueAggAll(entry, true);
+					Map<String, List<String>> set = findTrueAggAll(entry, true);
 					optSet.put(key, set);
 					return "Showing all the true atoms ";
 				} 
 		} else {
 			if (guard.contains("<")) {
-				HashMap<String, List<String>> set = findTrueAggAll(entry, true);
+				Map<String, List<String>> set = findTrueAggAll(entry, true);
 				optSet.put(key, set);
 				return "Showing all the true atoms ";
 			} else if (guard.contains(">")) {
-				HashMap<String, List<String>> set = findFalseAggAll(entry, true);
+				Map<String, List<String>> set = findFalseAggAll(entry, true);
 				optSet.put(key, set);
 				return "Showing all the false atoms ";
 				}
