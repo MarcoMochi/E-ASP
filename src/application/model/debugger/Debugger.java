@@ -47,15 +47,7 @@ public class Debugger {
 		this.unsupported = new ArrayList<String>();
 	}	
 	
-	//try {
-	//		getFacts(f);
-	//		computeAtoms();
-	//	} 
-	//	catch (IOException e) {
-	//		throw e;
-	//	}
-	//}
-
+	
 	public void stopDebug() {
 		if (process != null)
 			process.destroy();
@@ -204,25 +196,7 @@ public class Debugger {
 		return qa;
 	}
 	
-	public List<QueryAtom> selectableQuery(List<QueryAtom> qa) {
-		List<QueryAtom> temp_qa = new ArrayList<QueryAtom>();
-		for (QueryAtom q : qa) {
-			if (this.derivedAtoms.contains(q.getAtom()) || this.falseAtoms.contains(q.getAtom()) && this.derivedAtoms != null) {
-				temp_qa.add(q);
-			}
-		}
-		
-		return temp_qa;
-	}
 	
-	public List<String> getDerivedAtoms() {
-		return derivedAtoms;
-	}
-	
-	public List<String> getFalseAtoms() {
-		return falseAtoms;
-	}
-
 	private File stringToTmpFile(String program) throws IOException {
 		File tempFile = File.createTempFile("e-asp-", ".tmp.asp");
 		FileWriter fileWriter = new FileWriter(tempFile, true);
@@ -239,12 +213,6 @@ public class Debugger {
 		while (br.ready()) {
 			String line = br.readLine();
 			if (!line.contains("#show"))
-				//if (!line.contains(":-") && line.contains("..")) {
-				//	for (String temp_atom : transform_line(line)) {
-				//		builder.append(temp_atom + "\n");
-				//	}
-				//continue;
-				//}
 				builder.append(line + "\n");
 		}
 		br.close();
@@ -1310,14 +1278,14 @@ public class Debugger {
 			this.unsupported.add(atom);
 		}
 		String prefix = "(?<=\\s|,|:-)";
-		String affix = "(?=\\s+|,|\\.)";
+		String appendix = "(?=\\s+|,|\\.)";
 		for(String line : tmp.split("\n")) {
 			if (!line.contains(":-"))
 				continue;
 			String tmp_head = line.split(":-")[0].trim();
 			String tmp_body = line.split(":-")[1];
 			for (String atom : atoms) {
-					String regex = prefix + "" + atom + affix;
+					String regex = prefix + "" + atom + appendix;
 
 			        Pattern pattern = Pattern.compile(regex);
 			        Matcher matcher = pattern.matcher(tmp_body);
