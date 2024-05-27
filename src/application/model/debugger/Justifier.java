@@ -16,6 +16,15 @@ public class Justifier {
 		this.d = new Debugger(debug_rules, debug_AS);
 	} 
 	
+	public QueryAtom deriveQueryAtom(String atom) {
+		for (QueryAtom tmp_atom : qa) {
+			if (tmp_atom.getAtom().equals(atom.replace("not ","").replace(".", ""))) {
+					return tmp_atom;
+					}
+			}
+		return new QueryAtom(atom, 0);
+	}
+	
 	public List<QueryAtom> computeFirstAnswerSet() throws IOException {
 		this.d.getFacts(this.program);
 		this.d.computeAtoms(this.program);

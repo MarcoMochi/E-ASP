@@ -70,7 +70,7 @@ public class Debugger {
 		String output = launchSolver(tmp, "--models=1", "--outf=2", true);
 		File tmpFile = new File(".tmp_file2");
 		String output_info = fileToString(tmpFile); 
-		tmpFile.deleteOnExit();
+		tmpFile.delete();
 		String output_split = output_info.split("start:")[1];
 		String[] output_tmp = output_split.split("-mid-");
 		String grounded_tmp = output_tmp[0];
@@ -381,6 +381,7 @@ public class Debugger {
 		return builder.toString();
 	}
 	
+	
 	private boolean checkCoherence(String extendedProgram, List<String> core) throws IOException {
 		String tmp = extendedProgram;
 		for (int i = 0; i < core.size(); i++) {
@@ -431,7 +432,15 @@ public class Debugger {
 			Pattern pattern = Pattern.compile("__debug\\((\".*\"),(.*),(.*)\\)");
 			Matcher m = pattern.matcher(s);
 			if (m.find()) {
-				unsatCore.addRule(m.group(1).replaceAll("\"", "").replace("\\", ""), Integer.parseInt(m.group(2)));
+				String tmp_considered = m.group(1).replaceAll("\"", "").replace("\\", "");
+				if (Integer.parseInt(m.group(2)) == 2) {
+					if (derivedAtoms.contains(tmp_considered.replace(".", "")))
+						unsatCore.addRule(tmp_considered, Integer.parseInt(m.group(2)));
+					else
+						unsatCore.addRule("not " + tmp_considered, Integer.parseInt(m.group(2)));
+				}
+				else
+					unsatCore.addRule(tmp_considered, Integer.parseInt(m.group(2)));
 			}
 		}
 		
@@ -455,14 +464,18 @@ public class Debugger {
 				}
 				
 				if (this.debug_AS) {
-					if (this.unsupported.contains(m.group(1).replaceAll("\"", "").replace(":-", "").replace(".", "").trim())) {
-						unsatCore.addRule(m.group(1).replaceAll("\"", "").replace("\\", ""), 2);
+					String tmp_considered = m.group(1).replaceAll("\"", "").replace(":-", "");
+					if (this.unsupported.contains(tmp_considered.replace(".", "").trim())) {
+						unsatCore.addRule("not " + tmp_considered, 2);
 						continue;
 					}
 					
-					if (!m.group(1).replaceAll("\"", "").replace(":-", "").replace(" not ", "").replace(".", "").trim().equals(atom.getAtom())) {
-						unsatCore.addRule(m.group(1).replaceAll("\"", "").replace("\\", ""), 2);
-							continue;
+					if (!tmp_considered.replace(" not ", "").replace(".", "").trim().equals(atom.getAtom())) {
+						if (derivedAtoms.contains(tmp_considered.replace(".", "")))
+							unsatCore.addRule(tmp_considered, 2);
+						else	
+							unsatCore.addRule("not " + tmp_considered, 2);
+						continue;
 						}
 					}
 				

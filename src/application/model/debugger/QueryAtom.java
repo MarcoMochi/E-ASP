@@ -52,6 +52,7 @@ public class QueryAtom {
 		else
 			return getAtom();
 	}
+	
 
 	@Override
 	public boolean equals(Object o) {

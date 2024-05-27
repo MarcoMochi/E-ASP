@@ -60,7 +60,7 @@ public class ExplanationController {
     void explainAtom() {
         if(treeView.getSelectionModel().getSelectedItem() != null) {
             String atom = treeView.getSelectionModel().getSelectedItem().getValue();
-            queryAtom = new QueryAtom(atom, 0);
+            queryAtom = justifier.deriveQueryAtom(atom);
             justifierService.setParameters(justifier, chain, queryAtom);
             justifierService.restart();
         }
