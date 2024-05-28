@@ -289,8 +289,14 @@ public class Debugger {
 						line = line.substring(0, line.length() - 1) + ", not " + deb + ".";
 						debugAtoms.add(deb);
 					} else if (line.contains(".")) {
-						deb = "__debug(\"" + line_parsed + "\",1," + cont + ")";
-						line = line.substring(0, line.length() - 1) + ":- not " + deb + ".";
+						if (line.contains("{")) {
+							deb = "__debug(\"" + line_parsed + "\",0," + cont + ")";
+							line = line.substring(0, line.length() - 1) + ":- not " + deb + ".";
+						}
+						else {
+							deb = "__debug(\"" + line_parsed + "\",1," + cont + ")";
+							line = line.substring(0, line.length() - 1) + ":- not " + deb + ".";
+						}
 						debugAtoms.add(deb);
 					} else {
 						continue;
@@ -365,6 +371,7 @@ public class Debugger {
 
 	private UnsatisfiableCore computeMinimalCore(String extendedProgram, QueryAtom atom) throws Exception {
 		UnsatisfiableCore unsatCore = new UnsatisfiableCore();	
+		System.out.print(extendedProgram);
 		if (this.unsupported.contains(atom.getAtom())) {
 			unsatCore.addRule("No rules with atom in the head", 0);
 			return unsatCore;
@@ -400,6 +407,9 @@ public class Debugger {
 				minimalCore.add(last);
 		}
 		
+		System.out.println(minimalCore);
+
+		
 		for (String s : minimalCore) {
 			Pattern pattern = Pattern.compile("__debug\\((\".*\"),(.*),(.*)\\)");
 			Matcher m = pattern.matcher(s);
@@ -421,7 +431,7 @@ public class Debugger {
 			Matcher m = pattern.matcher(s);
 			if (m.find()) {
 				
-				//System.out.print("Got supported: " + m.group(1).replaceAll("\"", ""));
+				System.out.print("Got supported: " + m.group(1).replaceAll("\"", ""));
 				
 				if (this.debug_rules) {
 					List<String> head_rules = searchHead(m.group(1).replaceAll("\"", ""), extendedProgram);
@@ -443,8 +453,8 @@ public class Debugger {
 					}
 					
 					if (!tmp_considered.replace(" not ", "").replace(".", "").trim().equals(atom.getAtom())) {
-						if (derivedAtoms.contains(tmp_considered.replace(".", "")))
-							unsatCore.addRule(tmp_considered, 2);
+						if (derivedAtoms.contains(tmp_considered.replace(" not ", "").replace(".", "")))
+							unsatCore.addRule(tmp_considered.replace(" not ", ""), 2);
 						else	
 							unsatCore.addRule("not " + tmp_considered, 2);
 						continue;
@@ -667,6 +677,10 @@ public class Debugger {
 	
 	public List<String> getOrder() {
 		return this.order;
+	}
+	
+	public List<String> getDerivedAtoms() {
+		return this.derivedAtoms;
 	}
 	
 	public void updateQuery(List<QueryAtom> queries) {
