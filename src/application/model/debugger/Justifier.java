@@ -1,9 +1,9 @@
 package application.model.debugger;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
 
 public class Justifier {
 	private String program;
@@ -32,7 +32,6 @@ public class Justifier {
 		return qa;
 	}
 	
-	
 	// String più tipo: 0 - regola, 1 - fatto, 2 - atom_to_explain, 3 - regola_con_aggregato
 	public List<Response> justify(List<QueryAtom> chain, QueryAtom atom) {
 		UnsatisfiableCore unsatCore = d.debug(atom, chain, qa, program);
@@ -40,10 +39,12 @@ public class Justifier {
 	}
 	
 	public Map<String,Map<String, List<String>>> expandAggregate(String rule, List<QueryAtom> answerSet) {
-		
 		Map<String,Map<String, List<String>>> setToShow = d.generateSet(rule);
 		return setToShow;
 	}
 	
+	public String truthAggregate(String rule, String external) {
+		return d.getTruthAggregate(rule, external);
+	}
 	
 }

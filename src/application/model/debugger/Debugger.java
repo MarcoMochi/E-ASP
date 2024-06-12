@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -13,11 +14,17 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.antlr.v4.runtime.*;
+import org.antlr.v4.runtime.tree.*;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import application.Settings;
+import application.antlr4.Reader;
 
 
 public class Debugger {
@@ -37,6 +44,7 @@ public class Debugger {
 	private Boolean debug_rules;
 	private Boolean debug_AS;
 	private List<String> unsupported;
+	private Map<String, Map<String, String>> truth_aggregate;
 
 	public Debugger(boolean deb_rules, boolean deb_AS) {
 		this.rulesIgnored = new ArrayList<String>();
@@ -45,6 +53,7 @@ public class Debugger {
 		this.debug_rules = deb_rules;
 		this.debug_AS = deb_AS;
 		this.unsupported = new ArrayList<String>();
+		this.truth_aggregate = new HashMap<String, Map<String, String>>();
 	}	
 	
 	
@@ -57,7 +66,7 @@ public class Debugger {
 	void computeAtoms(String program) throws IOException {
 		derivedAtoms = new ArrayList<String>();
 		falseAtoms = new ArrayList<String>();
-		File helper = new File(DebuggerUtil.helper);
+		File helper = new File(Settings.getHelperPath());
 		String tmp = fileToString(helper);
 		tmp = tmp + program;
 		String output = launchSolver(tmp, "--models=1", "--outf=2", true);
@@ -223,7 +232,6 @@ public class Debugger {
 		StringBuilder tempProgram = new StringBuilder();
 		initialFacts = new ArrayList<String>();
 		rules = new ArrayList<String>();
-		String output = launchSolver(program.toString(),  "--mode=gringo", "--text");
 		for(String line : program.split("\n")) {
 			if (!line.contains(":-") && !line.contains(":~") && !line.contains("{") && line.length() > 0) {
 				tempProgram.append(line);
@@ -232,7 +240,7 @@ public class Debugger {
 			}
 		}
 		if (tempProgram.toString().length() > 0) {
-			output = launchSolver(tempProgram.toString(),  "--mode=gringo", "--text");
+			String output = launchSolver(tempProgram.toString(),  "--mode=gringo", "--text");
 			for (String atom : output.split("\n")) {
 				if (atom.length() > 0)
 					initialFacts.add(atom.substring(0, atom.length()-1));
@@ -282,8 +290,10 @@ public class Debugger {
 			
 					String deb = "";
 					if (line.contains(":-")) {
-						if (line.contains("#count") || line.contains("#sum")) 
+						if (line.contains("#count") || line.contains("#sum")) {
+							List<String> find_var = find_var(line_parsed);
 							deb = "__debug(\"" + line_parsed + "\",3," + cont + ")";
+						}
 						else
 							deb = "__debug(\"" + line_parsed + "\",0," + cont + ")";
 						line = line.substring(0, line.length() - 1) + ", not " + deb + ".";
@@ -630,7 +640,7 @@ public class Debugger {
 	
 	private boolean isIncoherent(String encoding, String option1, String option2) throws IOException {
 		File tempFile = stringToTmpFile(encoding);
-		process = new ProcessBuilder(DebuggerUtil.solver, tempFile.getAbsolutePath(), option1, option2).start();
+		process = new ProcessBuilder(Settings.getSolverPath(), tempFile.getAbsolutePath(), option1, option2).start();
 		
 		while (process.isAlive()) {
 		}
@@ -697,6 +707,27 @@ public class Debugger {
 		}
 	}
 	
+	private List<String> find_var(String line_parsed) {
+		
+		List<String> return_values = new ArrayList<String>();
+		try {
+			Set<String> variables = Reader.search(line_parsed);
+			return_values.addAll(variables);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
+		 
+		// Add way to derive all the variables in the body of the rule but outside the aggregate
+		// Then, add them as "V", V, "T", T ...
+		// Add usage of parser
+		
+		return return_values;
+	}
+	
+	
 	public Map<String,Map<String, List<String>>> generateSet(String aggregate) {
 		Map<String,Map<String, List<String>>> totalSet = new HashMap<String, Map<String, List<String>>>();
 		Map<String,Map<String, List<String>>> optSet = new HashMap<String, Map<String, List<String>>>();
@@ -717,6 +748,8 @@ public class Debugger {
 		String to_delete = "";
 		String message = "";
 		Map<String, String> created = new HashMap<String, String>();
+		Map<String, String> temp_map = new HashMap<String, String>();
+		
 		for (String atom : grounded) {
 			if (atom.startsWith("#external"))
 				continue;
@@ -764,21 +797,39 @@ public class Debugger {
 				
 				
 				if (aggregate.contains("#count")) {
+					Map<String, List<String>> entry = totalSet.get(outside.toString().replace(to_delete, ""));
+					boolean truth = check_truth(entry, to_delete, true);
+					if (truth)
+						temp_map.put(outside.toString().replace(to_delete, ""), " the aggregate is true, expand to see why");
+					else 
+						temp_map.put(outside.toString().replace(to_delete, ""), " the aggregate is false, expand to see why");
 					if (to_delete.contains(">") || to_delete.contains("<")) {
-						Map<String, List<String>> entry = totalSet.get(outside.toString().replace(to_delete, ""));
-						message = inspectCount(optSet, outside.toString().replace(to_delete, ""), entry, to_delete, internal);
-						}
+						if (truth) 
+							message = inspectCount(optSet, outside.toString().replace(to_delete, ""), entry, to_delete, internal, truth);
+						else 
+							message = inspectCount(optSet, outside.toString().replace(to_delete, ""), entry, to_delete, internal, truth);
+					}
 				}
 				else if (aggregate.contains("#sum")) {
+					Map<String, List<String>> entry = totalSet.get(outside.toString().replace(to_delete, ""));
+					boolean truth = check_truth(entry, to_delete, false);
+					if (truth)
+						temp_map.put(outside.toString().replace(to_delete, ""), " the aggregate is true, expand to see why");
+					else 
+						temp_map.put(outside.toString().replace(to_delete, ""), " the aggregate is false, expand to see why");
+					
 					if (to_delete.contains(">") || to_delete.contains("<")) {
-						Map<String, List<String>> entry = totalSet.get(outside.toString().replace(to_delete, ""));
-						message = inspectSum(optSet, outside.toString().replace(to_delete, ""), entry, to_delete, internal);
+						if (truth)
+							message = inspectSum(optSet, outside.toString().replace(to_delete, ""), entry, to_delete, internal, truth);
 						}
 				}
 				
 				
 			}
+			
 		}
+		
+		this.truth_aggregate.put(aggregate,  temp_map);
 		
 		setFalseTrue(totalSet);
 		List<Object> final_values = new ArrayList<Object>();
@@ -790,6 +841,15 @@ public class Debugger {
 			return totalSet;
 		}
 		
+	}
+	
+	
+	public String getTruthAggregate(String rule, String key) {
+		if (this.truth_aggregate.containsKey(rule)) {
+			if (this.truth_aggregate.get(rule).containsKey(key))
+				return this.truth_aggregate.get(rule).get(key);
+		}
+		return key;
 	}
 	
 	private boolean getIdSet(String body, String new_key, Map<String,Map<String, List<String>>> totalSet) {
@@ -806,6 +866,7 @@ public class Debugger {
 	        }
 	        set.get(temp_ID).add(temp_body);
 		}
+		
 		totalSet.put(new_key, set);
 		return found;
 	}
@@ -819,9 +880,14 @@ public class Debugger {
 				int index = 0;
 				for (String atom : mapping.getValue()) {
 					if (atom.contains("not ") && (this.falseAtoms.contains(atom.replace("not ", ""))))
-						set.get(key_global).get(key_local).get(index).replace("not ", "");
+						set.get(key_global).get(key_local).set(index, set.get(key_global).get(key_local).get(index).replace("not ", "") + " is false");
+					else if (atom.contains("not "))
+						set.get(key_global).get(key_local).set(index, set.get(key_global).get(key_local).get(index).replace("not ", "") + " is true");
 					else if (!atom.contains("not ") && !(this.derivedAtoms.contains(atom) || this.initialFacts.contains(atom)))
-						set.get(key_global).get(key_local).set(index, "not " + set.get(key_global).get(key_local).get(index));
+						set.get(key_global).get(key_local).set(index, set.get(key_global).get(key_local).get(index)  + " is false");
+					else
+						set.get(key_global).get(key_local).set(index, set.get(key_global).get(key_local).get(index)  + " is true");
+
 					index++;
 				}
 			}
@@ -845,7 +911,7 @@ public class Debugger {
 				}
 			}
 		}
-		
+		String appendix = " is true";
 		for(String check_atom : this.order) {
 			int tmp_index = 0;
 			if ((less && counter <= value_guard) || (!less && counter < (value_guard + slack))) {
@@ -856,7 +922,7 @@ public class Debugger {
 					if (values.contains(check_atom)) {
 							avoid.add(tmp_index);
 							List<String> temp = new ArrayList<String>();
-							temp.add(check_atom);
+							temp.add(check_atom + appendix);
 							set.put(order_set.toString(), temp);
 							order_set++;
 							counter++;
@@ -878,7 +944,7 @@ public class Debugger {
 						 
 						avoid.add(Integer.parseInt(key_atom.get(0)));
 						List<String> temp = new ArrayList<String>();
-						temp.add(check_atom);
+						temp.add(check_atom + appendix);
 						set.put(order_set.toString(), temp);
 						order_set++;
 						counter++;
@@ -909,6 +975,7 @@ public class Debugger {
 			}
 		}
 		
+		String appendix = " is true";
 		for(String check_atom : this.order) {
 			if ((less && counter <= value_guard) || (!less && counter < (value_guard + slack))) {
 				for (Entry<String, List<String>> mapping : entry.entrySet()) {
@@ -917,7 +984,7 @@ public class Debugger {
 					if (mapping.getValue().contains(check_atom)) {
 						avoid.add(mapping.getKey());
 						List<String> temp = new ArrayList<String>();
-						temp.add(check_atom);
+						temp.add(check_atom + appendix);
 						set.put(mapping.getKey(), temp);
 						counter += Integer.parseInt(mapping.getKey().split(",")[0]);
 						break;
@@ -938,7 +1005,7 @@ public class Debugger {
 						 
 						avoid.add(key_atom.get(0));
 						List<String> temp = new ArrayList<String>();
-						temp.add(check_atom);
+						temp.add(check_atom + appendix);
 						set.put(key_atom.get(0), temp);
 						counter += Integer.parseInt(key_atom.get(0).split(",")[0]);
 						break;
@@ -967,6 +1034,7 @@ public class Debugger {
 			}
 		}
 		
+		String appendix = " is false ";
 		for(String check_atom : this.order) {
 			if ((!less && counter < (total_atoms - (value_guard - slack)) ) || (less && counter <= (total_atoms - value_guard))) {
 				for (Entry<String, List<String>> key_values : entry.entrySet()) {
@@ -979,7 +1047,7 @@ public class Debugger {
 					if (values.contains(temp_atom)) {
 						if (!set.containsKey(key_values.getKey())) {
 							List<String> temp = new ArrayList<String>();
-							temp.add(check_atom);
+							temp.add(check_atom + appendix);
 							set.put(key_values.getKey(), temp);
 							counter++;
 						} else {
@@ -999,7 +1067,7 @@ public class Debugger {
 						(!check_atom.contains("not ") && (this.falseAtoms.contains(check_atom)))) {
 					if (!set.containsKey(key_atom.get(0))) {
 						List<String> temp = new ArrayList<String>();
-						temp.add(check_atom);
+						temp.add(check_atom + appendix);
 						set.put(key_atom.get(0), temp);
 						counter++;
 					} else {
@@ -1018,6 +1086,7 @@ public class Debugger {
 		Map<String, List<String>> set = new HashMap<String, List<String>>();
 		int counter = 0;
 		int total_atoms = 0;
+		String appendix = " is false";
 		for (List<String> values : entry.values())
 			total_atoms += values.size();
 		for(String check_atom : this.order) {
@@ -1031,7 +1100,7 @@ public class Debugger {
 					if (mapping.getValue().contains(temp_atom)) {
 						if (!set.containsKey(mapping.getKey())) {
 							List<String> temp = new ArrayList<String>();
-							temp.add(check_atom);
+							temp.add(check_atom + appendix);
 							set.put(mapping.getKey(), temp);
 						} else {
 							set.get(mapping.getKey()).add(check_atom);
@@ -1050,13 +1119,14 @@ public class Debugger {
 	private Map<String, List<String>> findTrueAggAll(Map<String, List<String>> entry, boolean sum_agg) {
 		Map<String, List<String>> set = new HashMap<String, List<String>>();
 		Integer order_set = 0;
+		String appendix = " is true ";
 		for (Entry<String, List<String>> map : entry.entrySet()) {
 			String val = map.getKey();
 			List<String> temp = new ArrayList<String>();
 		    for (String tmp_atom : map.getValue()) {
 		    	if ((tmp_atom.contains("not ") && this.falseAtoms.contains(tmp_atom.replace("not ", ""))) ||
 		    			(!tmp_atom.contains("not ") && (this.derivedAtoms.contains(tmp_atom) ||this.initialFacts.contains(tmp_atom)))) {
-		    		temp.add(tmp_atom);
+		    		temp.add(tmp_atom.replace("not ", "") + appendix);
 					if (sum_agg) {
 						set.put(val.toString(), temp);
 					} else {
@@ -1072,13 +1142,14 @@ public class Debugger {
 	private Map<String, List<String>> findFalseAggAll(Map<String, List<String>> entry, boolean sum_agg) {
 		Map<String, List<String>> set = new HashMap<String, List<String>>();
 		Integer order_set = 0;
+		String appendix = " is false ";
 		for (Entry<String, List<String>> map : entry.entrySet()) {
 			String val = map.getKey();
 			List<String> temp = new ArrayList<String>();
 		    for (String tmp_atom : map.getValue()) {
 		    	if ((tmp_atom.contains("not ") && !this.falseAtoms.contains(tmp_atom.replace("not ", ""))) ||
 		    			(!tmp_atom.contains("not ") && !(this.derivedAtoms.contains(tmp_atom) ||this.initialFacts.contains(tmp_atom)))) {
-		    		temp.add(tmp_atom);
+		    		temp.add(tmp_atom.replace("not ", "") + appendix);
 		    		if (sum_agg) {
 						set.put(val.toString(), temp);
 					} else {
@@ -1097,7 +1168,7 @@ public class Debugger {
 		for (List<String> values : entry.values()) {
 		    for (String tmp_atom : values) {
 		    	List<String> temp = new ArrayList<String>();
-				temp.add(tmp_atom);
+		    	temp.add(tmp_atom);
 		    	set.put(order_set.toString(), temp);
 		    	order_set++;
 		    }
@@ -1105,7 +1176,7 @@ public class Debugger {
 		return set;
 	}
 	
-	private String inspectCount(Map<String,Map<String, List<String>>> optSet, String key, Map<String, List<String>> entry, String guard, Boolean truth) {
+	private String inspectCount(Map<String,Map<String, List<String>>> optSet, String key, Map<String, List<String>> entry, String guard, Boolean internal, Boolean truth) {
 		Pattern p = Pattern.compile("-?\\d+");
 		Matcher m = p.matcher(guard);
 		Integer value_guard = 0;
@@ -1114,9 +1185,9 @@ public class Debugger {
 		}
 		//boolean truth = check_truth(entry, guard, true);
 		
-		if (!this.derivedAtoms.contains(this.analyzed.getAtom())) {
+		if (truth) {
 			// The sign are inverted due to the way gringo show the aggregates
-			if (truth) {
+			if (internal) {
 				if (guard.contains("<=")) {
 					Map<String, List<String>> set = findTrueAggUntil(entry, value_guard, 0, false);
 					optSet.put(key, set);
@@ -1155,7 +1226,7 @@ public class Debugger {
 				}
 		 	}
 		} else {
-			if (truth) {
+			if (internal) {
 				if (guard.contains("<")) {
 					Map<String, List<String>> set = findFalseAggAll(entry, false);
 					optSet.put(key, set);
@@ -1180,7 +1251,7 @@ public class Debugger {
 		return "";
 	}
 	
-	private String inspectSum(Map<String,Map<String, List<String>>> optSet, String key, Map<String, List<String>> entry, String guard, Boolean truth) {
+	private String inspectSum(Map<String,Map<String, List<String>>> optSet, String key, Map<String, List<String>> entry, String guard, Boolean internal, Boolean truth) {
 		Pattern p = Pattern.compile("-?\\d+");
 		Matcher m = p.matcher(guard);
 		Integer value_guard = 0;
@@ -1190,8 +1261,8 @@ public class Debugger {
 		int counter = 0;
 		//boolean truth = check_truth(entry, guard, true);
 		Integer order = 0; 
-		if (!this.derivedAtoms.contains(this.analyzed.getAtom())) {
-			if (truth) {
+		if (truth) {
+			if (internal) {
 				if (guard.contains("<=")) {
 					Map<String, List<String>> set = findTrueAggUntilSum(entry, value_guard, 0, false);
 					optSet.put(key, set);
@@ -1230,7 +1301,7 @@ public class Debugger {
 				}
 		 	}
 		} else {
-			if (truth) {
+			if (internal) {
 				if (guard.contains("<")) {
 					Map<String, List<String>> set = findFalseAggAll(entry, true);
 					optSet.put(key, set);
@@ -1255,6 +1326,70 @@ public class Debugger {
 		return "";
 	}
 	
+	private boolean check_truth(Map<String, List<String>> map, String guard, boolean count) {
+		Pattern p = Pattern.compile("-?\\d+");
+		Matcher m = p.matcher(guard);
+		int value_guard = 0;
+		if (m.find()) {
+			value_guard = Integer.parseInt(m.group(0));
+		}
+		int counter = 0;
+		if (count) {
+			for (List<String> values : map.values()) {
+				for (String tmp_atom : values) {
+					if (tmp_atom.contains(":not ")) {
+						if (this.falseAtoms.contains(tmp_atom)) {
+							counter++;
+							break;
+						}
+					} else {
+						if (this.derivedAtoms.contains(tmp_atom)) {
+							counter++;
+							break;
+						}
+					}
+				}
+			}
+		} else {
+
+			for (Entry<String, List<String>> inside : map.entrySet()) {
+				int value_sum = Integer.parseInt(inside.getKey().split(",")[0]);
+				for (String tmp_atom : inside.getValue()) {
+					if (tmp_atom.contains(":not ")) {
+						if (this.falseAtoms.contains(tmp_atom)) {
+							counter += value_sum;
+							break;
+						}
+					} else {
+						if (this.derivedAtoms.contains(tmp_atom)) {
+							counter += value_sum;
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		if (guard.contains(">")) {
+			if (guard.contains("="))
+				return counter <= value_guard;
+			return counter < value_guard;
+		}
+		if (guard.contains("<")) {
+			if (guard.contains("="))
+				return counter >= value_guard;
+			return counter > value_guard;
+		}
+		if (guard.contains("=")) {
+			if (guard.contains("!="))
+				return counter != value_guard;
+			return counter == value_guard;
+		}
+
+		return true;
+
+	}
+	
 	private String launchSolver(String encoding, String option1, String option2) {
 		return launchSolver(encoding, option1, option2, false);
 	}
@@ -1264,14 +1399,14 @@ public class Debugger {
 		try {
 			File tempFile = stringToTmpFile(encoding);
 			
-			process = new ProcessBuilder(DebuggerUtil.solver, tempFile.getAbsolutePath(), option1, option2).start();
+			process = new ProcessBuilder(Settings.getSolverPath(), tempFile.getAbsolutePath(), option1, option2).start();
 			BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()));
 			if (check_error) {
 				BufferedReader br2 = new BufferedReader(new InputStreamReader(process.getErrorStream()));
 				get_unsupported(br2, encoding);
 			}
 	
-			
+			System.out.print(br.toString());
 			String line;
 			while ((line = br.readLine()) != null) {
 				builder.append(line + "\n");

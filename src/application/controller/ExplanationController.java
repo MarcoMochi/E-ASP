@@ -122,6 +122,7 @@ public class ExplanationController {
             Map<String,Map<String, List<String>>> aggregates = (Map<String,Map<String, List<String>>>) e.getSource().getValue();
             for(Entry<String, Map<String, List<String>>> map : aggregates.entrySet()) {
             	String key = map.getKey();
+            	key += justifier.truthAggregate(res.getRule(), key);
             	TreeItem<String> subtree = new TreeItem<>(key);
                 ruleWithAggregate.getChildren().add(subtree);
                 for(Entry<String, List<String>> values : map.getValue().entrySet()) {
