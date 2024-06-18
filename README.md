@@ -6,7 +6,7 @@ E-ASP - Tool for debugging and justifying ASP programs
 ### Prerequisites:
 - Java version: 18
 - Maven
-- Clingo version: 5.6.2 
+- Clingo version: 5.6.2 - We suggest using the Conda version for MAC users due to a problem caused by the version installed through Brew https://github.com/potassco/clingo/issues/470.
 
 ### Setting:
 To correctly use E-ASP is required to put the correct paths inside the set_path file:
