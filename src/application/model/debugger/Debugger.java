@@ -287,17 +287,26 @@ public class Debugger {
 			String line_parsed = line.replace("\"", "\\\"");
 			if (!start_AS) {
 				if(debug_rules) {
-			
+					boolean add_aggregate = false;
 					String deb = "";
 					if (line.contains(":-")) {
 						if (line.contains("#count") || line.contains("#sum")) {
-							List<String> find_var = find_var(line_parsed);
-							deb = "__debug(\"" + line_parsed + "\",3," + cont + ")";
+							add_aggregate = true;
+							List<String> ground_aggs = find_var(line_parsed);
+							line = line.substring(0, line.length() - 1) + ", not " + ground_aggs.get(0) + ".";
+							builder.append(line + "\n");
+							for (String ground_agg : ground_aggs.subList(1, ground_aggs.size())) {
+								builder.append("{" + ground_agg + "}.\n");
+								debugAtoms.add(ground_agg);
+							}
+							//deb = "__debug(\"" + line_parsed + "\",3,start" +temp_vars +",end,"+ cont + ")";
 						}
 						else
 							deb = "__debug(\"" + line_parsed + "\",0," + cont + ")";
+						
 						line = line.substring(0, line.length() - 1) + ", not " + deb + ".";
-						debugAtoms.add(deb);
+						if (!add_aggregate)
+							debugAtoms.add(deb);
 					} else if (line.contains(".")) {
 						if (line.contains("{")) {
 							deb = "__debug(\"" + line_parsed + "\",0," + cont + ")";
@@ -312,8 +321,10 @@ public class Debugger {
 						continue;
 					}
 					
-					builder.append(line + "\n");
-					builder.append("{" + deb + "}.\n");
+					if (!add_aggregate) {
+						builder.append(line + "\n");
+						builder.append("{" + deb + "}.\n");
+					}
 					
 				} else {
 					
@@ -381,7 +392,6 @@ public class Debugger {
 
 	private UnsatisfiableCore computeMinimalCore(String extendedProgram, QueryAtom atom) throws Exception {
 		UnsatisfiableCore unsatCore = new UnsatisfiableCore();	
-		System.out.print(extendedProgram);
 		if (this.unsupported.contains(atom.getAtom())) {
 			unsatCore.addRule("No rules with atom in the head", 0);
 			return unsatCore;
@@ -417,11 +427,10 @@ public class Debugger {
 				minimalCore.add(last);
 		}
 		
-		System.out.println(minimalCore);
 
 		
 		for (String s : minimalCore) {
-			Pattern pattern = Pattern.compile("__debug\\((\".*\"),(.*),(.*)\\)");
+			Pattern pattern = Pattern.compile("__debug\\((\".*\"),([^3]),([^,]*)\\)");
 			Matcher m = pattern.matcher(s);
 			if (m.find()) {
 				String tmp_considered = m.group(1).replaceAll("\"", "").replace("\\", "");
@@ -437,11 +446,25 @@ public class Debugger {
 		}
 		
 		for (String s : minimalCore) {
+			Pattern pattern = Pattern.compile("__debug\\((\".*\"),3,start.*?end,(.*)\\)");
+			Matcher m = pattern.matcher(s);
+			if (m.find()) {
+				String tmp_considered = m.group(1).replaceAll("\"", "").replace("\\", "");
+				String[] tmp_vars = m.group(0).split(",start,")[1].split(",end,")[0].split(",");
+				for (int i = 0; i + 1 < tmp_vars.length; i += 2) {
+					String ref = tmp_vars[i].replace("\"", "");
+					tmp_considered = tmp_considered.replaceAll("\\b"+ref+"\\b", tmp_vars[i+1]);
+				}
+			
+			unsatCore.addRule(tmp_considered, 3);
+			}	
+		}
+		
+		for (String s : minimalCore) {
 			Pattern pattern = Pattern.compile("__support\\((\".*\"),(.*),(.*)\\)");
 			Matcher m = pattern.matcher(s);
 			if (m.find()) {
 				
-				System.out.print("Got supported: " + m.group(1).replaceAll("\"", ""));
 				
 				if (this.debug_rules) {
 					List<String> head_rules = searchHead(m.group(1).replaceAll("\"", ""), extendedProgram);
@@ -476,6 +499,16 @@ public class Debugger {
 		
 		
 		return unsatCore;
+	}
+	
+	private String get_external(String rule) {
+		
+		rule = rule.split(":-")[rule.split(":-").length - 1];
+		String patternString = ",?\\s*(\\w+?\\s*(?:!=|=|<=|>=|<|>))?\\s*#(count|sum)\\{[^}]*\\}\\s*((!=|=|<=|>=|<|>)\\s\\w+)?\\s*(?:,|.){1}";
+        Pattern pattern = Pattern.compile(patternString);
+        Matcher matcher1 = pattern.matcher(rule);
+        
+        return matcher1.replaceAll("");
 	}
 	
 	
@@ -708,23 +741,91 @@ public class Debugger {
 	}
 	
 	private List<String> find_var(String line_parsed) {
+		List<String> debug_atoms = new ArrayList<String>();
 		
-		List<String> return_values = new ArrayList<String>();
+		StringBuilder builder = new StringBuilder();
+		builder.append(line_parsed + "\n");
+		for (String rule : this.initialFacts)
+			builder.append("#external " + rule + ".\n");
+		for (String rule : this.derivedAtoms)
+			builder.append("#external " + rule + ".\n");
+		for (String rule : this.falseAtoms)
+			builder.append("#external " + rule + ".\n");
+		
+		
+		String output = launchSolver(builder.toString(),  "--mode=gringo", "--text");
+		String[] grounded = output.split("\n");
+		Pattern pattern = Pattern.compile("\\{(.*?)\\}");
+		Map<String, String> created = new HashMap<String, String>();
+		Map<String, List<String>> non_ground = new HashMap<String, List<String>>();
+		Map<String, List<String>> ground;
+		String deb = new String();
+		List<String> vars_name = new ArrayList<String>();
+		
 		try {
-			Set<String> variables = Reader.search(line_parsed);
-			return_values.addAll(variables);
-		} catch (Exception e) {
+			non_ground = Reader.search(line_parsed);
+			deb = "__debug(\"" + line_parsed + "\",3,start";
+			for (Entry<String, List<String>> mapping : non_ground.entrySet()) {
+				for (String val : mapping.getValue()) {
+					deb += ",\"" + val + "\"," + val;
+					vars_name.add("\"" + val + "\"");
+				}
+			}
+			deb += ",end,"+ 0 + ")";
+			debug_atoms.add(deb);
+			
+		} catch (Exception e1) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			e1.printStackTrace();
 		}
 		
+		for (String atom : grounded) {
+			if (atom.startsWith("#")) {
+				if (atom.contains(":-") && atom.split(":-")[0].length() > 0  && atom.split(":-")[1].length() > 0) {
+					created.put(atom.split(":-")[0].trim(), atom.split(":-")[1].trim());
+				continue;
+				}
+			}
+				
+			Matcher matcher = pattern.matcher(atom);
+			if (matcher.find()) {
+				String tmp_outside = "";
+				if (atom.contains(":-")) 
+					tmp_outside = atom.split(":-")[1];
+				else if (atom.contains("<=>"))
+					tmp_outside = atom.split("<=>")[1];
+				else
+					continue;
+				
+				for (Entry<String, String> gr_text : created.entrySet()) {
+					if (tmp_outside.contains(gr_text.getKey()))
+						tmp_outside = tmp_outside.replace(gr_text.getKey(), gr_text.getValue().substring(0, gr_text.getValue().length() - 1));
+				}
+				
+				
+				String outside = get_external(tmp_outside) + ".";
+				try {
+					ground = Reader.search(outside);
+					if (ground.keySet().equals(non_ground.keySet())) {
+						String new_deb = "__debug(\"" + line_parsed + "\",3,start";
+						int i = 0;
+						for (Entry<String, List<String>> mapping : ground.entrySet()) {
+							for (String val : mapping.getValue()) {
+								new_deb += "," + vars_name.get(i) + "," + val;
+								i++;
+							}
+						}
+						 new_deb += ",end,"+ 0 + ")";
+						 debug_atoms.add(new_deb);
+					}
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}	
 		
-		 
-		// Add way to derive all the variables in the body of the rule but outside the aggregate
-		// Then, add them as "V", V, "T", T ...
-		// Add usage of parser
-		
-		return return_values;
+		return debug_atoms;
 	}
 	
 	
@@ -1406,7 +1507,6 @@ public class Debugger {
 				get_unsupported(br2, encoding);
 			}
 	
-			System.out.print(br.toString());
 			String line;
 			while ((line = br.readLine()) != null) {
 				builder.append(line + "\n");

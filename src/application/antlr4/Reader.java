@@ -4,13 +4,22 @@ import org.antlr.v4.runtime.tree.*;
 
 import application.antlr4.generated.*;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class Reader {
 	
-	 public static Set<String> search(String rule) throws Exception {
-    	
+	 public static Map<String, List<String>> search(String rule) throws Exception {
+		
+		if (rule.split(":-").length > 1)
+			rule = "fake :- " + rule.split(":-")[1];
+		else
+			rule = "fake :- " + rule.split(":-")[0];
+		
     	CharStream input = CharStreams.fromString(rule);
 
         ASPCore2Lexer lexer = new ASPCore2Lexer(input);
@@ -21,7 +30,7 @@ public class Reader {
         ParseTree tree = parser.program();
 
         VariableExtractor extractor = new VariableExtractor();
-        Set<String> variables = extractor.visit(tree);
+        Map<String, List<String>> variables = extractor.visit(tree);
 
         return variables;
     }
@@ -108,5 +117,54 @@ class VariableExtractor extends ASPCore2BaseVisitor<Set<String>> {
 	        variables.add(ctx.VARIABLE().getText());
 	        return variables;
 	   }
+            variables.computeIfAbsent("", k -> new ArrayList<>()).add(ctx.VARIABLE().getText());
+        }
+        return variables;
+    }
+    
+    @Override
+    public Map<String, List<String>> visitTerm_number(ASPCore2Parser.Term_numberContext ctx) {
+        return visitChildren(ctx);
+    }
+    
+    @Override public Map<String, List<String>> visitNumeral(ASPCore2Parser.NumeralContext ctx) { 
+    	Map<String, List<String>> variables = new HashMap<>();
+        if (ctx.NUMBER() != null) {
+        	variables.computeIfAbsent("", k -> new ArrayList<>()).add(ctx.NUMBER().getText());
+        }
+        return variables;
+    }
+    
+
+    @Override
+    public Map<String, List<String>> visitAggregate(ASPCore2Parser.AggregateContext ctx) {
+        Map<String, List<String>> variables = new HashMap<>();
+        if (ctx.aggregate_elements() != null) {
+            variables.putAll(visit(ctx.aggregate_elements()));
+        }
+        return variables;
+    }
+
+    @Override
+    public Map<String, List<String>> visitAggregate_elements(ASPCore2Parser.Aggregate_elementsContext ctx) {
+        Map<String, List<String>> variables = new HashMap<>();
+        if (ctx.aggregate_element() != null) {
+            ASPCore2Parser.Aggregate_elementContext elementContext = ctx.aggregate_element();
+            variables.putAll(visit(elementContext));
+        }
+        return variables;
+    }
+
+    @Override
+    public Map<String, List<String>> visitExternal_atom(ASPCore2Parser.External_atomContext ctx) {
+        Map<String, List<String>> variables = new HashMap<>();
+        if (ctx.input != null) {
+            variables.putAll(visit(ctx.input));
+        }
+        if (ctx.output != null) {
+            variables.putAll(visit(ctx.output));
+        }
+        return variables;
+    }
 }
        
