@@ -36,87 +36,107 @@ public class Reader {
     }
 }
 
-class VariableExtractor extends ASPCore2BaseVisitor<Set<String>> {
-	 @Override
-	    public Set<String> visitProgram(ASPCore2Parser.ProgramContext ctx) {
-	        Set<String> variables = new HashSet<>();
-	        if (ctx.statements() != null) {
-	            variables.addAll(visit(ctx.statements()));
-	        }
-	        if (ctx.query() != null) {
-	            variables.addAll(visit(ctx.query()));
-	        }
-	        return variables;
-	    }
+class VariableExtractor extends ASPCore2BaseVisitor<Map<String, List<String>>> {
+	@Override
+    public Map<String, List<String>>  visitProgram(ASPCore2Parser.ProgramContext ctx) {
+		Map<String, List<String>> variables = new HashMap<>();
+        if (ctx.statements() != null) {
+            variables.putAll(visit(ctx.statements()));
+        }
+        if (ctx.query() != null) {
+            variables.putAll(visit(ctx.query()));
+        }
+        return variables;
+    }
 
-	    @Override
-	    public Set<String> visitStatements(ASPCore2Parser.StatementsContext ctx) {
-	        Set<String> variables = new HashSet<>();
-	        for (ASPCore2Parser.StatementContext statementContext : ctx.statement()) {
-	        	variables.addAll(visit(statementContext));
-	        }
-	        return variables;
-	    }
+    @Override
+    public Map<String, List<String>>  visitStatements(ASPCore2Parser.StatementsContext ctx) {
+    	Map<String, List<String>> variables = new HashMap<>();
+        for (ASPCore2Parser.StatementContext statementContext : ctx.statement()) {
+        	variables.putAll(visit(statementContext));
+        }
+        return variables;
+    }
 
-	    @Override
-	    public Set<String> visitStatement_rule(ASPCore2Parser.Statement_ruleContext ctx) {
-	        Set<String> variables = new HashSet<>();
-	        variables.addAll(visit(ctx.body()));
-	        return variables;
-	    }
+    @Override
+    public Map<String, List<String>> visitStatement_rule(ASPCore2Parser.Statement_ruleContext ctx) {
+    	Map<String, List<String>> variables = new HashMap<>();
+    	if (ctx.body() != null)
+    		variables.putAll(visit(ctx.body()));
+        return variables;
+    }
+    
+	@Override
+	public Map<String, List<String>> visitBody(ASPCore2Parser.BodyContext ctx) {
+        Map<String, List<String>> variables = new HashMap<>();
+        if (ctx.naf_literal() != null) {
+            variables.putAll(visit(ctx.naf_literal()));
+        }
+        if (ctx.body() != null) {
+            variables.putAll(visit(ctx.body()));
+        }
+        return variables;
+    }
 
-	    @Override
-	    public Set<String> visitBody(ASPCore2Parser.BodyContext ctx) {
-	        Set<String> variables = new HashSet<>();
-	        if (ctx.naf_literal() != null) {
-	            variables.addAll(visit(ctx.naf_literal()));
-	        }
-	        
-	        if (ctx.body() != null) {
-	            variables.addAll(visit(ctx.body()));
-	        }
-	        return variables;
-	    }
+    @Override
+    public Map<String, List<String>> visitNaf_literal(ASPCore2Parser.Naf_literalContext ctx) {
+        Map<String, List<String>> variables = new HashMap<>();
+        if (ctx.classical_literal() != null) {
+            variables.putAll(visit(ctx.classical_literal()));
+        }
+        if (ctx.external_atom() != null) {
+            variables.putAll(visit(ctx.external_atom()));
+        }
+        if (ctx.builtin_atom() != null) {
+            variables.putAll(visit(ctx.builtin_atom()));
+        } 
+        return variables;
+    }
+    
+    
+    
+    @Override
+    public Map<String, List<String>> visitClassical_literal(ASPCore2Parser.Classical_literalContext ctx) {
+        Map<String, List<String>> variables = new HashMap<>();
+        if (ctx.basic_atom() != null) {
+            variables.putAll(visit(ctx.basic_atom()));
+        }
+        return variables;
+    }
 
-	    @Override
-	    public Set<String> visitDisjunction(ASPCore2Parser.DisjunctionContext ctx) {
-	        Set<String> variables = new HashSet<>();
-	        ASPCore2Parser.Classical_literalContext classicalLiteralContext = ctx.classical_literal();
-	        variables.addAll(visit(classicalLiteralContext));
-	        return variables;
-	    }
+    @Override
+    public Map<String, List<String>> visitBasic_atom(ASPCore2Parser.Basic_atomContext ctx) {
+        Map<String, List<String>> variables = new HashMap<>();
+        if (ctx.id() != null && ctx.terms() != null) {
+            // Extract the function name
+            String functionName = ctx.id().getText();
+            
+            List<String> termList = new ArrayList<>();
+            Map<String, List<String>> terms = visit(ctx.terms());
+            terms.values().forEach(termList::addAll);
+            // For each term, map the function name to the term
+            variables.put(functionName, termList);  
+        }
+        return variables;
+    }
 
-	    @Override
-	    public Set<String> visitClassical_literal(ASPCore2Parser.Classical_literalContext ctx) {
-	        return visit(ctx.basic_atom());
-	    }
+    @Override
+    public Map<String, List<String>> visitTerms(ASPCore2Parser.TermsContext ctx) {
+        Map<String, List<String>> variables = new HashMap<>();
+        if (ctx.term() != null) {
+            ASPCore2Parser.TermContext termContext = ctx.term();
+            Map<String, List<String>> termResult = visit(termContext);
+            termResult.forEach((key, value) -> variables.computeIfAbsent(key, k -> new ArrayList<>()).addAll(value));
+        }
+        return variables;
+    }
 
-	    @Override
-	    public Set<String> visitBasic_atom(ASPCore2Parser.Basic_atomContext ctx) {
-	        Set<String> variables = new HashSet<>();
-	        if (ctx.id() != null && ctx.terms() == null) {
-	            variables.add(ctx.id().getText());
-	        }
-	        if (ctx.terms() != null) {
-	            variables.addAll(visit(ctx.terms()));
-	        }
-	        return variables;
-	    }
-
-	    @Override
-	    public Set<String> visitTerms(ASPCore2Parser.TermsContext ctx) {
-	        Set<String> variables = new HashSet<>();
-	        ASPCore2Parser.TermContext termContext = ctx.term();
-	        variables.addAll(visit(termContext));
-	        return variables;
-	    }
-
-	    @Override
-	    public Set<String> visitTerm_variable(ASPCore2Parser.Term_variableContext ctx) {
-	        Set<String> variables = new HashSet<>();
-	        variables.add(ctx.VARIABLE().getText());
-	        return variables;
-	   }
+    
+    
+    @Override
+    public Map<String, List<String>> visitTerm_variable(ASPCore2Parser.Term_variableContext ctx) {
+        Map<String, List<String>> variables = new HashMap<>();
+        if (ctx.VARIABLE() != null) {
             variables.computeIfAbsent("", k -> new ArrayList<>()).add(ctx.VARIABLE().getText());
         }
         return variables;
