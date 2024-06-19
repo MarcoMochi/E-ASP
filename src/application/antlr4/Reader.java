@@ -112,7 +112,7 @@ class VariableExtractor extends ASPCore2BaseVisitor<Map<String, List<String>>> {
             String functionName = ctx.id().getText();
             
             List<String> termList = new ArrayList<>();
-            Map<String, List<String>> terms = visit(ctx.terms());
+            Map<String, List<String>> terms = visitTerms(ctx.terms());
             terms.values().forEach(termList::addAll);
             // For each term, map the function name to the term
             variables.put(functionName, termList);  
@@ -123,15 +123,24 @@ class VariableExtractor extends ASPCore2BaseVisitor<Map<String, List<String>>> {
     @Override
     public Map<String, List<String>> visitTerms(ASPCore2Parser.TermsContext ctx) {
         Map<String, List<String>> variables = new HashMap<>();
-        if (ctx.term() != null) {
-            ASPCore2Parser.TermContext termContext = ctx.term();
+        
+        while (ctx != null && ctx.term() != null) {
+        	ASPCore2Parser.TermContext termContext = ctx.term();
             Map<String, List<String>> termResult = visit(termContext);
             termResult.forEach((key, value) -> variables.computeIfAbsent(key, k -> new ArrayList<>()).addAll(value));
+            ctx = ctx.terms();
         }
         return variables;
     }
 
-    
+    @Override
+	public Map<String, List<String>> visitTerm_string(ASPCore2Parser.Term_stringContext ctx) {
+    	Map<String, List<String>> variables = new HashMap<>();
+    	if (ctx.QUOTED_STRING() != null) {
+    		variables.computeIfAbsent("", k -> new ArrayList<>()).add(ctx.QUOTED_STRING().getText().replace("\\\"", "'"));
+    	}
+    	return variables;
+	}
     
     @Override
     public Map<String, List<String>> visitTerm_variable(ASPCore2Parser.Term_variableContext ctx) {
