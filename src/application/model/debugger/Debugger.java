@@ -425,10 +425,7 @@ public class Debugger {
 			}
 			if (!isIncoherent(tmp, "--outf=1", "--keep-facts"))
 				minimalCore.add(last);
-		}
-		
-		System.out.print(minimalCore);
-		
+		}		
 
 		
 		for (String s : minimalCore) {
