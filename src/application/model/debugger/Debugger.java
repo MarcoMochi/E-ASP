@@ -284,7 +284,7 @@ public class Debugger {
 				continue;
 			}
 			
-			String line_parsed = line.replace("\"", "\\\"");
+			String line_parsed = line.replace("\"", "'");
 			if (!start_AS) {
 				if(debug_rules) {
 					boolean add_aggregate = false;
@@ -339,9 +339,9 @@ public class Debugger {
 				
 				String atom_tmp = null;
 				if (line.contains(":- not")) 
-					atom_tmp = line.replace(":- not ", "");
+					atom_tmp = line.replace(":- not ", "").replace("\"", "'");
 				else if (line.contains(":- ")) 
-					atom_tmp = line.replace(":- ", "");
+					atom_tmp = line.replace(":- ", "").replace("\"", "'");
 				else
 					continue;
 				
@@ -426,6 +426,8 @@ public class Debugger {
 			if (!isIncoherent(tmp, "--outf=1", "--keep-facts"))
 				minimalCore.add(last);
 		}
+		
+		System.out.print(minimalCore);
 		
 
 		
