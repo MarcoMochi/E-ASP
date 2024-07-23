@@ -1,0 +1,155 @@
+* {
+  -fx-text-fill: textColor;
+  -fx-background-color: primaryBackgroundColor;
+}
+
+.text {
+	-fx-fill: textColor;
+}
+
+.combo-box {
+    -fx-background-color: primaryBackgroundColor;
+    -fx-border-color: textColor;
+}
+
+.combo-box .arrow {
+    -fx-background-color: textColor;
+}
+
+.check-box .box {
+    -fx-background-color: primaryBackgroundColor;
+    -fx-border-color: primarySelectionColor;
+    -fx-border-radius:  3px;
+}
+
+.check-box:selected .mark {
+    -fx-background-color: textColor;
+}
+
+.check-box:selected .box {
+    -fx-background-color: primaryBackgroundColor;
+}
+
+.split-pane > .split-pane-divider {  
+    -fx-padding: 0 0 0 0.10em;      
+    -fx-background-color: separatorColor;
+}
+
+.tab-pane > .tab-header-area > .headers-region > .tab * {
+    -fx-background-color: transparent;
+}
+
+.tab-pane > .tab-header-area > .headers-region > .tab * .tab-close-button {
+    -fx-background-color: textColor;
+}
+
+.tab, .tab-pane > .tab-header-area > .headers-region > .tab:hover * .tab-close-button {
+    -fx-background-color: primarySelectionColor;
+}
+
+.tab-pane .tab:selected, .menu-bar *, .text-area *, .border-pane * {
+    -fx-background-color: secondaryBackgroundColor;
+}
+
+.menu-bar {
+    -fx-use-system-menu-bar: false;
+    -fx-padding: 0 0 0 0;
+}
+
+.menu:hover, .menu:hover > .label,
+.menu-item:hover, .menu-item:focused,
+.menu-item:hover > .label, .menu-item:focused > .label,
+.button:hover {
+    -fx-background-color: primarySelectionColor;
+}
+
+.button {
+    -fx-background-color: buttonBackgroundColor;
+    -fx-background-radius: 5px;
+}
+
+.scroll-bar:horizontal .track,
+.scroll-bar:vertical .track{
+    -fx-background-color :transparent;
+    -fx-border-color :transparent;
+    -fx-background-radius : 0.0em;
+    -fx-border-radius :2.0em;
+    -fx-padding :0.0 10.0 0.0 0.0;
+}
+
+.scroll-bar:horizontal .increment-button ,
+.scroll-bar:horizontal .decrement-button {
+    -fx-background-color :transparent;
+    -fx-background-radius : 0.0em;
+    -fx-padding :0.0 0.0 10.0 0.0;
+}
+
+.scroll-bar:vertical .increment-button ,
+.scroll-bar:vertical .decrement-button {
+    -fx-background-color :transparent;
+    -fx-background-radius : 0.0em;
+    -fx-padding :0.0 10.0 0.0 0.0;
+}
+
+ .scroll-bar .increment-arrow,
+ .scroll-bar .decrement-arrow{
+    -fx-shape : " ";
+    -fx-padding :0.15em 0.0;
+}
+
+ .scroll-bar:vertical .increment-arrow,
+ .scroll-bar:vertical .decrement-arrow{
+    -fx-shape : " ";
+    -fx-padding :0.0 0.15em;
+}
+
+.scroll-bar:horizontal .thumb,
+.scroll-bar:vertical .thumb {
+    -fx-background-color :derive(black,90.0%);
+    -fx-background-insets : 2.0, 0.0, 0.0;
+    -fx-background-radius : 2.0em;
+}
+
+.scroll-bar:horizontal .thumb:hover,
+.scroll-bar:vertical .thumb:hover {
+    -fx-background-color :derive(#4D4C4F,10.0%);
+    -fx-background-insets : 2.0, 0.0, 0.0;
+    -fx-background-radius : 2.0em;
+}
+
+.icons-color {
+    -fx-icon-color: textColor;
+    -fx-background: primaryBackgroundColor;
+}
+
+.list-cell:filled:selected:focused, .list-cell:filled:selected {
+    -fx-background-color: primarySelectionColor!important;
+    -fx-text-fill: textColor;
+}
+
+.list-cell:filled:even {
+    -fx-background-color: secondaryBackgroundColor;
+}
+
+.list-cell:filled:hover {
+    -fx-background-color: secondarySelectionColor!important;
+    -fx-text-fill: textColor;
+}
+
+.tree-cell:selected {
+    -fx-background-color: primarySelectionColor!important;
+    -fx-text-fill: textColor;
+}
+
+.tree-cell:filled:hover {
+    -fx-background-color: secondarySelectionColor!important;
+    -fx-text-fill: textColor;
+}
+
+.tree-view .arrow {
+    -fx-background-color: textColor;
+}
+
+.tree-cell:filled:even {
+    -fx-background-color: secondaryBackgroundColor;
+}

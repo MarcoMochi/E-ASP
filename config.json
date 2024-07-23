@@ -1,0 +1,5 @@
+{
+  "helper": "helper/helper.lp",
+  "theme": "light",
+  "solver": "/Users/marco/opt/miniconda3/envs/potassco/bin/clingo"
+}

@@ -1,0 +1,23 @@
+* {
+  primaryBackgroundColor: #f2f2f2;
+  secondaryBackgroundColor: white;
+  buttonBackgroundColor: #81D4FA;
+  primarySelectionColor: #0181d7;
+  secondarySelectionColor: #017ff5;
+  tertiarySelectionColor: #0181d7;
+  textColor: black;
+  buttonTextColor: primaryBackgroundColor;
+  selectedTextColor: black;
+  lineColor: #b3b3b3;
+  separatorColor: black;
+  
+  keywordColor: #cc6026;  
+  dotColor: #0086b8;
+  parenColor: firebrick;
+  bracketColor: #f1e979;    
+  braceColor: teal;
+  stringColor: green;
+  commentColor: cadetblue;
+  paragraphBoxColor: #f2f9fc;
+}
+
