@@ -33,7 +33,7 @@
         </top>
         <bottom>
             <HBox maxHeight="-Infinity" prefHeight="20.0" prefWidth="200.0" spacing="5" style="-fx-padding: 4 4 4 4;" BorderPane.alignment="CENTER">
-                <Button mnemonicParsing="false" onAction="#justify" text="Justify" />
+                <Button mnemonicParsing="false" onAction="#justify" text="Explain" />
                 <CheckBox fx:id="checkRules" selected="true" style="-fx-padding: 4 0 0 0;" text="Include rules" />
                 <CheckBox fx:id="checkLiterals" selected="true" style="-fx-padding: 4 0 0 0;" text="Include literals" />
             <ProgressBar fx:id="progressBar" prefWidth="200.0" progress="0.0" HBox.hgrow="ALWAYS">

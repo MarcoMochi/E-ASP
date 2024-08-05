@@ -2,6 +2,7 @@ package application.controller;
 
 import application.model.debugger.Justifier;
 import application.model.debugger.QueryAtom;
+import application.model.debugger.Response;
 import application.view.CustomFontIcon;
 import application.view.FileMenu;
 import application.view.SceneHandler;
@@ -17,6 +18,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -60,6 +62,8 @@ public class EditorController {
     private final OpenFileService openFileService = new OpenFileService();
 
     private final ComputeFirstAnswerSetService computeFirstAnswerSetService = new ComputeFirstAnswerSetService();
+    
+    private final DebugProgramService justifierService = new DebugProgramService();
 
     @FXML
     void justify() {
@@ -78,9 +82,21 @@ public class EditorController {
                 Justifier justifier = new Justifier(area.getText(), checkRules.isSelected(), checkLiterals.isSelected());
                 computeFirstAnswerSetService.setJustifier(justifier);
                 computeFirstAnswerSetService.setOnSucceeded(e -> {
-                    @SuppressWarnings("unchecked")
-                    List<QueryAtom> answerSet = (List<QueryAtom>) e.getSource().getValue();
-                    SceneHandler.getInstance().showInspectAnswerSetWindow(answerSet, justifier);
+                	if (e.getSource().getValue() != null) {
+	                    @SuppressWarnings("unchecked")
+	                    List<QueryAtom> answerSet = (List<QueryAtom>) e.getSource().getValue();
+	                    // Add here check for level_costs
+	                    SceneHandler.getInstance().showInspectAnswerSetWindow(answerSet, justifier);
+                	} else {
+                		justifierService.setParameters(justifier);
+                		justifierService.setOnSucceeded(k -> {
+            			@SuppressWarnings("unchecked")
+                        List<Response> response = (List<Response>) k.getSource().getValue();
+                        SceneHandler.getInstance().showDebuggerWindow(justifier, response);
+                    	});
+                		justifierService.setOnFailed(k -> SceneHandler.getInstance().showErrorMessage("Error", "Error while computing first answer set."));
+                		justifierService.restart();
+                	}
                 });
                 computeFirstAnswerSetService.setOnFailed(e -> SceneHandler.getInstance().showErrorMessage("Error", "Error while computing first answer set."));
                 computeFirstAnswerSetService.restart();

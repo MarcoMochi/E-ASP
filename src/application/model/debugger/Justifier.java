@@ -13,7 +13,7 @@ public class Justifier {
 	
 	public Justifier(String program, Boolean debug_rules, Boolean debug_AS) {
 		this.program = program;
-		this.d = new Debugger(debug_rules, debug_AS);
+		this.d = new Debugger(debug_rules, debug_AS, program);
 	} 
 	
 	public QueryAtom deriveQueryAtom(String atom) {
@@ -27,14 +27,37 @@ public class Justifier {
 	
 	public List<QueryAtom> computeFirstAnswerSet() throws IOException {
 		this.d.getFacts(this.program);
-		this.d.computeAtoms(this.program);
-		qa = this.d.populateQuery();
-		return qa;
+		Boolean is_sat = this.d.computeAtoms(this.program);
+		if (is_sat) {
+			qa = this.d.populateQuery();
+			return qa;
+		}
+		else {
+			return null;
+		}	
+	}
+	
+	public List<CostLevel> requestCostLevel() {
+		return this.d.getCostLevel();
+	}
+	
+	public Boolean optProblem() {
+		return this.d.isOpt(); 
 	}
 	
 	// String più tipo: 0 - regola, 1 - fatto, 2 - atom_to_explain, 3 - regola_con_aggregato
-	public List<Response> justify(List<QueryAtom> chain, QueryAtom atom) {
-		UnsatisfiableCore unsatCore = d.debug(atom, chain, qa, program);
+	public List<Response> justify(List<QueryAtom> chain, QueryAtom atom, Boolean checkOpt) {
+		UnsatisfiableCore unsatCore = d.debug(atom, chain, qa, program, checkOpt);
+		return unsatCore.getRules();
+	}
+
+	public List<Response> justifyCost(CostLevel level, Boolean checkOpt) {
+		UnsatisfiableCore unsatCore = d.debug(level.getLevel(), qa, program, checkOpt);
+		return unsatCore.getRules();
+	}
+	
+	public List<Response> debug() {
+		UnsatisfiableCore unsatCore = d.debug(program);
 		return unsatCore.getRules();
 	}
 	

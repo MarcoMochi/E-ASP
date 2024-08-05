@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-public class ExplanationController {
+public class CostExplanationController {
 
     @FXML
     private Button backButton;
@@ -32,11 +32,7 @@ public class ExplanationController {
     private Justifier justifier;
 
     private final ExplainAtomService justifierService = new ExplainAtomService();
-
-    private QueryAtom queryAtom;
-
-    private List<QueryAtom> chain;
-
+    
     private List<QueryAtom> answerSet;
 
     @FXML
@@ -57,20 +53,8 @@ public class ExplanationController {
         SceneHandler.getInstance().backHome();
     }
 
-    @FXML
-    void explainAtom() {
-        if(treeView.getSelectionModel().getSelectedItem() != null) {
-            String atom = treeView.getSelectionModel().getSelectedItem().getValue();
-            queryAtom = justifier.deriveQueryAtom(atom);
-            justifierService.setParameters(justifier, chain, queryAtom, false);
-            justifierService.restart();
-        }
-    }
-
-    public void init(Justifier justifier, List<QueryAtom> answerSet, List<QueryAtom> chain, List<Response> response) {
-        label.setText("Explanation chain: " + chain);
+    public void init(Justifier justifier, List<QueryAtom> answerSet, List<Response> response) {
         this.justifier = justifier;
-        this.chain = chain;
         this.answerSet = answerSet;
         backButton.setGraphic(new CustomFontIcon("mdi2c-chevron-left"));
         homeButton.setGraphic(new CustomFontIcon("mdi2h-home"));
@@ -100,18 +84,6 @@ public class ExplanationController {
         explanation.getChildren().add(literals);
         explanation.getChildren().add(facts);
         treeView.setRoot(explanation);
-        justifierService.setOnSucceeded(e -> {
-            if(!chain.contains(queryAtom)) {
-                @SuppressWarnings("unchecked")
-                List<Response> resp = (List<Response>) e.getSource().getValue();
-                List<QueryAtom> newChain = new ArrayList<>(chain);
-                newChain.add(queryAtom);
-                SceneHandler.getInstance().showExplanationWindow(justifier, answerSet, newChain, resp);
-            }
-        });
-        justifierService.setOnFailed(e -> SceneHandler.getInstance().showErrorMessage("Error", "Something went wrong during the computation of the justification."));
-        progressBar.visibleProperty().bind(justifierService.runningProperty());
-        progressBar.progressProperty().bind(justifierService.progressProperty());
     }
 
     private ExpandAggregateTask getExpandAggregateTask(Justifier justifier, Response res) {

@@ -8,18 +8,12 @@ import javafx.concurrent.Task;
 
 import java.util.List;
 
-public class ExplainAtomService extends Service<List<Response>> {
+public class DebugProgramService extends Service<List<Response>> {
 
     private Justifier justifier;
-    private List<QueryAtom> chain;
-    private QueryAtom atom;
-    private Boolean checkOpt;
-
-    public void setParameters(Justifier justifier, List<QueryAtom> chain, QueryAtom atom, Boolean checkOpt) {
+    
+    public void setParameters(Justifier justifier) {
         this.justifier = justifier;
-        this.chain = chain;
-        this.atom = atom;
-        this.checkOpt = checkOpt;
     }
 
 
@@ -28,7 +22,7 @@ public class ExplainAtomService extends Service<List<Response>> {
         return new Task<>() {
             @Override
             protected List<Response> call() throws Exception {
-                return justifier.justify(chain, atom, checkOpt);
+                return justifier.debug();
             }
         };
     }
