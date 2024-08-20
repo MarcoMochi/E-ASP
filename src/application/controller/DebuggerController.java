@@ -18,9 +18,6 @@ import java.util.Map.Entry;
 public class DebuggerController {
 
     @FXML
-    private Button backButton;
-
-    @FXML
     private Button homeButton;
 
     @FXML
@@ -42,18 +39,12 @@ public class DebuggerController {
     private final TreeItem<String> facts = new TreeItem<>("Facts");
 
     @FXML
-    void back() {
-        SceneHandler.getInstance().back();
-    }
-
-    @FXML
     void home() {
         SceneHandler.getInstance().backHome();
     }
 
     public void init(Justifier justifier, List<Response> response) {
         this.justifier = justifier;
-        backButton.setGraphic(new CustomFontIcon("mdi2c-chevron-left"));
         homeButton.setGraphic(new CustomFontIcon("mdi2h-home"));
         for(Response res : response) {
             switch (res.getValue()) {

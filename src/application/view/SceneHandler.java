@@ -2,6 +2,7 @@ package application.view;
 
 import application.Settings;
 import application.controller.AnswerSetInspectionController;
+import application.controller.AnswerSetSelectionController;
 import application.controller.CostExplanationController;
 import application.controller.ExplanationController;
 import application.controller.DebuggerController;
@@ -107,6 +108,14 @@ public class SceneHandler {
         scene.setRoot(obj.root());
         AnswerSetInspectionController controller = obj.loader().getController();
         controller.init(answerSet, justifier);
+    }
+    
+    public void showSelectAnswerSetWindow(List<String> answerSets, Justifier justifier) {
+    	LoaderRootObject<Parent> obj = loadFXML("AnswerSetSelection.fxml");
+        explanationsStack.add(obj.root());
+        scene.setRoot(obj.root());
+        AnswerSetSelectionController controller = obj.loader().getController();
+        controller.init(answerSets, justifier);
     }
 
     public void showExplanationWindow(Justifier justifier, List<QueryAtom> answerSet, List<QueryAtom> chain, List<Response> response) {

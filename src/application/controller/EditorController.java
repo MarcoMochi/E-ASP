@@ -47,7 +47,13 @@ public class EditorController {
 
     @FXML
     private TabPane tabPane;
-
+    
+    @FXML
+    private RadioButton singleAS;
+    
+    @FXML
+    private RadioButton tenAS;
+    
     @FXML
     private CheckBox checkRules;
 
@@ -63,7 +69,12 @@ public class EditorController {
 
     private final ComputeFirstAnswerSetService computeFirstAnswerSetService = new ComputeFirstAnswerSetService();
     
+    private final ComputeMultiAnswerSetService computeMultiAnswerSetService = new ComputeMultiAnswerSetService();
+
+    
     private final DebugProgramService justifierService = new DebugProgramService();
+    
+    final ToggleGroup radioGroup = new ToggleGroup();
 
     @FXML
     void justify() {
@@ -80,26 +91,53 @@ public class EditorController {
                 @SuppressWarnings("unchecked") VirtualizedScrollPane<InlineCssTextArea> vs = (VirtualizedScrollPane<InlineCssTextArea>) t.getContent();
                 InlineCssTextArea area = vs.getContent();
                 Justifier justifier = new Justifier(area.getText(), checkRules.isSelected(), checkLiterals.isSelected());
-                computeFirstAnswerSetService.setJustifier(justifier);
-                computeFirstAnswerSetService.setOnSucceeded(e -> {
-                	if (e.getSource().getValue() != null) {
-	                    @SuppressWarnings("unchecked")
-	                    List<QueryAtom> answerSet = (List<QueryAtom>) e.getSource().getValue();
-	                    // Add here check for level_costs
-	                    SceneHandler.getInstance().showInspectAnswerSetWindow(answerSet, justifier);
-                	} else {
-                		justifierService.setParameters(justifier);
-                		justifierService.setOnSucceeded(k -> {
-            			@SuppressWarnings("unchecked")
-                        List<Response> response = (List<Response>) k.getSource().getValue();
-                        SceneHandler.getInstance().showDebuggerWindow(justifier, response);
-                    	});
-                		justifierService.setOnFailed(k -> SceneHandler.getInstance().showErrorMessage("Error", "Error while computing first answer set."));
-                		justifierService.restart();
-                	}
-                });
-                computeFirstAnswerSetService.setOnFailed(e -> SceneHandler.getInstance().showErrorMessage("Error", "Error while computing first answer set."));
-                computeFirstAnswerSetService.restart();
+                
+                if (tenAS.isSelected()) {
+                	computeMultiAnswerSetService.setJustifier(justifier, 10);
+                	computeMultiAnswerSetService.setOnSucceeded(e -> {
+	                	if (e.getSource().getValue() != null) {
+		                    @SuppressWarnings("unchecked")
+		                    List<String> answerSets = (List<String>) e.getSource().getValue();
+		                    // Add here check for level_costs
+		                    SceneHandler.getInstance().showSelectAnswerSetWindow(answerSets, justifier);
+	                	} else {
+	                		justifierService.setParameters(justifier);
+	                		justifierService.setOnSucceeded(k -> {
+	            			@SuppressWarnings("unchecked")
+	                        List<Response> response = (List<Response>) k.getSource().getValue();
+	                        SceneHandler.getInstance().showDebuggerWindow(justifier, response);
+	                    	});
+	                		justifierService.setOnFailed(k -> SceneHandler.getInstance().showErrorMessage("Error", "Error while computing first answer set."));
+	                		justifierService.restart();
+	                	}
+	                });
+                	computeMultiAnswerSetService.setOnFailed(e -> SceneHandler.getInstance().showErrorMessage("Error", "Error while computing first answer set."));
+                	computeMultiAnswerSetService.restart();
+                } 
+                
+                else {
+	                computeFirstAnswerSetService.setJustifier(justifier);
+	                computeFirstAnswerSetService.setOnSucceeded(e -> {
+	                	if (e.getSource().getValue() != null) {
+		                    @SuppressWarnings("unchecked")
+		                    List<QueryAtom> answerSet = (List<QueryAtom>) e.getSource().getValue();
+		                    // Add here check for level_costs
+		                    SceneHandler.getInstance().showInspectAnswerSetWindow(answerSet, justifier);
+	                	} else {
+	                		justifierService.setParameters(justifier);
+	                		justifierService.setOnSucceeded(k -> {
+	            			@SuppressWarnings("unchecked")
+	                        List<Response> response = (List<Response>) k.getSource().getValue();
+	                        SceneHandler.getInstance().showDebuggerWindow(justifier, response);
+	                    	});
+	                		justifierService.setOnFailed(k -> SceneHandler.getInstance().showErrorMessage("Error", "Error while computing first answer set."));
+	                		justifierService.restart();
+	                	}
+	                });
+	                computeFirstAnswerSetService.setOnFailed(e -> SceneHandler.getInstance().showErrorMessage("Error", "Error while computing first answer set."));
+	                computeFirstAnswerSetService.restart();
+                }
+            
             } catch (Exception e) {
                 SceneHandler.getInstance().showInfoMessage("End of solving", "There is no solution to the provided model");
             }
@@ -186,6 +224,7 @@ public class EditorController {
         return t;
     }
 
+    
     @FXML
     void initialize() {
         menuBar.setUseSystemMenuBar(true);
@@ -196,6 +235,9 @@ public class EditorController {
         exitMenuItem.setGraphic(new CustomFontIcon("mdi2e-exit-to-app"));
         aboutMenuItem.setGraphic(new CustomFontIcon("mdi2i-information"));
         settingsMenuItem.setGraphic(new CustomFontIcon("mdi2a-account"));
+        singleAS.setToggleGroup(radioGroup);
+        singleAS.setSelected(true);
+        tenAS.setToggleGroup(radioGroup);
         openFileService.setOnSucceeded(e -> {
             Tab t = createNewTab(openFileService.getChosenFile().getName());
             @SuppressWarnings("unchecked") VirtualizedScrollPane<InlineCssTextArea> vs = (VirtualizedScrollPane<InlineCssTextArea>) t.getContent();

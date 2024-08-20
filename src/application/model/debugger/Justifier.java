@@ -4,11 +4,14 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import org.json.JSONObject;
+
 
 public class Justifier {
 	private String program;
 	private Debugger d;
 	private List<QueryAtom> qa;
+	private JSONObject output;
 	
 	
 	public Justifier(String program, Boolean debug_rules, Boolean debug_AS) {
@@ -23,6 +26,27 @@ public class Justifier {
 					}
 			}
 		return new QueryAtom(atom, 0);
+	}
+	
+	public List<QueryAtom> getAnswerSet() {
+		return qa;
+	}
+	
+	public List<String> computeAnswerSets(Integer n) throws IOException {
+		Boolean is_sat = this.d.computeAnswerSets(this.program, n);
+		if (is_sat) {
+			this.output = this.d.getJSONArrayOutput();
+			return this.d.getAnswerSets();
+		} else {
+			return null;
+		}
+	}
+	
+	public List<QueryAtom> retrieveAtoms(Integer i) throws IOException {
+		this.d.getFacts(this.program);
+		this.d.ComputeAtomsDerived(i);
+		qa = this.d.populateQuery();
+		return qa;
 	}
 	
 	public List<QueryAtom> computeFirstAnswerSet() throws IOException {

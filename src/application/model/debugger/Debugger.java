@@ -39,6 +39,8 @@ public class Debugger {
 	private List<String> falseAtoms;
 	private List<String> rules;
 	private List<String> order;
+	private String multipleOrders;
+	private List<String> grounded;
 	private QueryAtom analyzed;
 	boolean onlyFacts;
 	private List<String> rulesIgnored;
@@ -48,6 +50,7 @@ public class Debugger {
 	private Boolean debug_AS;
 	private Boolean optimization_problem;
 	private JSONArray cost;
+	private JSONObject output;
 	private int n_models = 1;
 	private List<String> unsupported;
 	private Map<String, Map<String, String>> truth_aggregate;
@@ -73,6 +76,81 @@ public class Debugger {
 	}
 	
 	
+	Boolean computeAnswerSets(String program, Integer n) throws IOException {
+		derivedAtoms = new ArrayList<String>();
+		falseAtoms = new ArrayList<String>();
+		File helper = new File(Settings.getHelperPath());
+		String tmp = fileToString(helper);
+		String output;
+		if (!optimization_problem) {
+			tmp = tmp + program;
+			output = launchSolver(tmp, "--models=" + String.valueOf(n), "--outf=2", true);
+		} else { 
+			String tmp_program = add_aux_program(program);
+			tmp = tmp + tmp_program;
+			output = launchSolver(tmp, "--models=" + String.valueOf(n) + " --quiet=1,1,2", "--outf=2", true);
+		}
+		File tmpFile = new File(".tmp_file2");
+		// Bisogna selezionare l'n-esimo modello, che corrisponde a quello scelto dall'utente, ora mettiamo l'ultimo
+		String grounded_tmp = get_ground(fileToString(tmpFile));
+		multipleOrders = fileToString(tmpFile);
+		tmpFile.delete();
+		this.grounded = new ArrayList<String>(Arrays.asList(grounded_tmp.split(";")));
+		JSONObject obj = new JSONObject(output);
+		if (obj.has("Result")) {
+			if (obj.get("Result").equals("UNSATISFIABLE")) {
+				return false;
+			}
+		}
+		this.output = obj;
+		return true;
+	}
+	
+	JSONObject getJSONArrayOutput() {
+		return this.output;
+	}
+	
+	List<String> getAnswerSets() {
+		ArrayList<String> answerSets = new ArrayList<String>();
+		try {
+			JSONArray arr = (JSONArray) this.output.get("Call");
+			JSONArray models = (JSONArray) arr.getJSONObject(0).get("Witnesses");
+			for (int i = 0; i < models.length(); i++) {
+				JSONObject tmpAS = (JSONObject) models.get(i);
+				answerSets.add(tmpAS.get("Value").toString().substring(1, tmpAS.get("Value").toString().length()-1).replace("\\\"", "'"));
+			}
+		} catch (Exception e) {
+			throw e;
+		}
+		return answerSets;
+	}
+	
+	void ComputeAtomsDerived(int i) {
+		JSONArray arr = (JSONArray) this.output.get("Call");
+		JSONArray model = (JSONArray) arr.getJSONObject(0).get("Witnesses");
+		JSONArray answerset = (JSONArray) model.getJSONObject(i).get("Value");
+		String order_tmp = get_info(i);
+		order = new ArrayList<String>(Arrays.asList(order_tmp.split(";")));
+		for (int j = 0; j < answerset.length(); j++) {
+			String atom = answerset.getString(j);
+			if (atom.startsWith("__debug") || atom.equals(""))
+				continue;
+			if (!initialFacts.contains(atom)) {
+				derivedAtoms.add(atom);
+				if (this.falseAtoms.contains(atom))
+					this.falseAtoms.remove(atom);
+				}	
+			}
+			for (String ground : grounded) {
+				if (!derivedAtoms.contains(ground) & !initialFacts.contains(ground) & !(ground.equals("") & !this.falseAtoms.contains(ground)))
+					this.falseAtoms.add(ground);
+			}
+			if (optimization_problem)
+				update_cost();
+	
+	}
+	
+	
 	Boolean computeAtoms(String program) throws IOException {
 		derivedAtoms = new ArrayList<String>();
 		falseAtoms = new ArrayList<String>();
@@ -92,7 +170,7 @@ public class Debugger {
 		String grounded_tmp = get_ground(fileToString(tmpFile));
 		String order_tmp;
 		if (!optimization_problem)
-			order_tmp = get_info(fileToString(tmpFile), this.n_models);
+			order_tmp = get_info(fileToString(tmpFile), -1);
 		else 
 			order_tmp = get_info(fileToString(tmpFile), -1);
 		tmpFile.delete();
@@ -338,8 +416,24 @@ public class Debugger {
 		return last_order;
 	}
 	
+	private String get_info(int n) {
+		int index = 0;
+		String last_order = "";
+		for(String line : multipleOrders.split("\n")) {
+			if (line.startsWith("-mid-")) {
+				if (index == n & n != -1)
+					return line.split("-mid-")[1];
+				else {
+					last_order = line.split("-mid-")[1];
+					index += 1;
+				}
+			}
+		}
+		return last_order;
+	}
+	
 	private String get_ground(String program) {
-		return program.split("\n-mid-")[0].replace("start:", "");
+		return program.split("\\n-mid-")[0].replace("start:", "");
 	}
 	
 	
