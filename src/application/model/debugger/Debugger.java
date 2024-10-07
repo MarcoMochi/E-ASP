@@ -215,7 +215,7 @@ public class Debugger {
 		try {
 			this.analyzed = atom;
 			program = addDerived(program, atom, chain, queries);
-			program = setRulesForOrder(program, atom);
+			//program = setRulesForOrder(program, atom);
 			String extendedProgram = extendProgram(program, atom, "", checkOpt);
 			return computeMinimalCore(extendedProgram, atom, checkOpt);
 		} catch (Exception e) {
@@ -256,8 +256,8 @@ public class Debugger {
 					ignore = true;
 					continue;
 				}
-				if (ignore)
-					atoms.add(i);
+				//if (ignore)
+				//	atoms.add(i);
 			}
 		}
 		
@@ -284,6 +284,8 @@ public class Debugger {
 		StringBuilder builder = new StringBuilder();
 		builder.append("\n%Add Answer Set\n");
 		for (QueryAtom q : queries) {
+			if (this.unsupported.contains(q.getAtom()))
+				continue;
 			if (q.equals(atom)) {
 				if (q.getValue() == QueryAtom.FALSE) 
 					builder.append(":- not " + q.getAtom() + ".\n");
@@ -322,24 +324,22 @@ public class Debugger {
 	
 	public List<QueryAtom> populateQuery() {
 		ArrayList<QueryAtom> qa = new ArrayList<QueryAtom>();
-		//for (String i : initialFacts) {
-		//	qa.add(new QueryAtom(i, QueryAtom.TRUE));
-		//}
+		
 		if (derivedAtoms != null) {
 			for (String i : derivedAtoms) {
-				if (!i.startsWith("aux("))
+				if (!i.startsWith("aux(")) {
 					qa.add(new QueryAtom(i, QueryAtom.TRUE));
+				}
 			}
 		}
+		
 		for (String i : falseAtoms) {
-			if (!i.startsWith("aux("))
-				qa.add(new QueryAtom(i, QueryAtom.FALSE));
+			if (!i.startsWith("aux(")) {
+				if(!this.unsupported.contains(i)) {
+					qa.add(new QueryAtom(i, QueryAtom.FALSE));
+				}
+			}
 		}
-		//for (String i : rules) {
-		//	qa.add(new QueryAtom(i, QueryAtom.NOT_SET));
-		//}
-		
-		
 		return qa;
 	}
 	
@@ -948,7 +948,7 @@ public class Debugger {
 	private String get_external(String rule) {
 		
 		rule = rule.split(":-")[rule.split(":-").length - 1];
-		String patternString = ",?\\s*(\\w+?\\s*(?:!=|=|<=|>=|<|>))?\\s*#(count|sum)\\{[^}]*\\}\\s*((!=|=|<=|>=|<|>)\\s\\w+)?\\s*(?:,|.){1}";
+		String patternString = ",?\\s*(\\w+?\\s*(?:!=|=|<=|>=|<|>))?\\s*#(count|sum)\\{[^}]*\\}\\s*((!=|=|<=|>=|<|>)\\s*\\w+)?\\s*(?:,|.){1}";
         Pattern pattern = Pattern.compile(patternString);
         Matcher matcher1 = pattern.matcher(rule);
         
@@ -1228,9 +1228,10 @@ public class Debugger {
 			builder.append("#external " + rule + ".\n");
 		for (String rule : this.derivedAtoms)
 			builder.append("#external " + rule + ".\n");
-		for (String rule : this.falseAtoms)
-			builder.append("#external " + rule + ".\n");
-		
+		for (String rule : this.falseAtoms) {
+			if (!this.unsupported.contains(rule))
+				builder.append("#external " + rule + ".\n");
+		}
 		
 		String output = launchSolver(builder.toString(),  "--mode=gringo", "--text");
 		String[] grounded = output.split("\n");
@@ -1282,7 +1283,9 @@ public class Debugger {
 				}
 				
 				
-				String outside = get_external(tmp_outside) + ".";
+				String outside = get_external(tmp_outside);
+				if (!outside.endsWith("."))
+					outside += ".";
 				try {
 					ground = Reader.search(outside);
 					if (ground.keySet().equals(non_ground.keySet())) {
@@ -1290,8 +1293,12 @@ public class Debugger {
 						int i = 0;
 						for (Entry<String, List<String>> mapping : ground.entrySet()) {
 							for (String val : mapping.getValue()) {
-								new_deb += "," + vars_name.get(i) + "," + val;
-								i++;
+								try {
+									new_deb += "," + vars_name.get(i) + "," + val;
+									i++;
+								} catch (Exception e) {
+									continue;
+								}
 							}
 						}
 						 new_deb += ",end,"+ 0 + ")";
@@ -1394,9 +1401,9 @@ public class Debugger {
 					Map<String, List<String>> entry = totalSet.get(outside.toString().replace(to_delete, ""));
 					boolean truth = check_truth(entry, to_delete, false);
 					if (truth)
-						temp_map.put(outside.toString().replace(to_delete, ""), " the aggregate is true, expand to see why");
+						temp_map.put(outside.toString().replace(to_delete, ""), " the aggregate is flase, expand to see why");
 					else 
-						temp_map.put(outside.toString().replace(to_delete, ""), " the aggregate is false, expand to see why");
+						temp_map.put(outside.toString().replace(to_delete, ""), " the aggregate is true, expand to see why");
 					
 					if (to_delete.contains(">") || to_delete.contains("<")) {
 						if (truth)

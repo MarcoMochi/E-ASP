@@ -225,7 +225,8 @@ class VariableExtractor extends ASPCore2BaseVisitor<Map<String, List<String>>> {
         while (ctx != null && ctx.term() != null) {
         	ASPCore2Parser.TermContext termContext = ctx.term();
             Map<String, List<String>> termResult = visit(termContext);
-            termResult.forEach((key, value) -> variables.computeIfAbsent(key, k -> new ArrayList<>()).addAll(value));
+            if (termResult != null)
+            	termResult.forEach((key, value) -> variables.computeIfAbsent(key, k -> new ArrayList<>()).addAll(value));
             ctx = ctx.terms();
         }
         return variables;
