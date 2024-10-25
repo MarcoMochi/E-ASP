@@ -1,5 +1,6 @@
 package application.controller;
 
+import application.model.debugger.CostLevel;
 import application.model.debugger.Justifier;
 import application.model.debugger.QueryAtom;
 import application.model.debugger.Response;
@@ -8,17 +9,15 @@ import javafx.concurrent.Task;
 
 import java.util.List;
 
-public class ExplainAtomService extends Service<List<Response>> {
+public class ExplainCostService extends Service<List<Response>> {
 
     private Justifier justifier;
-    private List<QueryAtom> chain;
-    private QueryAtom atom;
+    private CostLevel level;
     private Boolean checkOpt;
 
-    public void setParameters(Justifier justifier, List<QueryAtom> chain, QueryAtom atom, Boolean checkOpt) {
+    public void setParameters(Justifier justifier, CostLevel level, Boolean checkOpt) {
         this.justifier = justifier;
-        this.chain = chain;
-        this.atom = atom;
+        this.level = level;
         this.checkOpt = checkOpt;
     }
 
@@ -28,7 +27,7 @@ public class ExplainAtomService extends Service<List<Response>> {
         return new Task<>() {
             @Override
             protected List<Response> call() throws Exception {
-                return justifier.justify(chain, atom, checkOpt);
+                return justifier.justifyCost(level, checkOpt);
             }
         };
     }

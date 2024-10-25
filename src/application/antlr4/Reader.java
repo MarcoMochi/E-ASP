@@ -34,9 +34,78 @@ public class Reader {
 
         return variables;
     }
+	 
+	 public static String get_body(String rule) throws Exception {
+
+		 	CharStream input = CharStreams.fromString(rule);
+
+	        ASPCore2Lexer lexer = new ASPCore2Lexer(input);
+
+	        CommonTokenStream tokens = new CommonTokenStream(lexer);
+
+	        ASPCore2Parser parser = new ASPCore2Parser(tokens);
+	        ParseTree tree = parser.program();
+
+	        
+	        WeightedStatementBodyVisitor visitor = new WeightedStatementBodyVisitor();
+	        visitor.visit(tree);
+	        String body = visitor.get_body();
+	        return body;
+	    }
+	 
+	 public static String get_cost(String rule) throws Exception {
+
+		 	CharStream input = CharStreams.fromString(rule);
+
+	        ASPCore2Lexer lexer = new ASPCore2Lexer(input);
+
+	        CommonTokenStream tokens = new CommonTokenStream(lexer);
+
+	        ASPCore2Parser parser = new ASPCore2Parser(tokens);
+	        ParseTree tree = parser.program();
+
+	        
+	        WeightedStatementBodyVisitor visitor = new WeightedStatementBodyVisitor();
+	        visitor.visit(tree);
+	        String cost = visitor.get_cost();
+	        return cost;
+	    }
+
+
 }
 
+class WeightedStatementBodyVisitor extends ASPCore2BaseVisitor {
+	
+	private String body;
+	private String cost;
+	
+        @Override
+        public Void visitStatement_weightConstraint(ASPCore2Parser.Statement_weightConstraintContext ctx) {
+        	String bodyText = "";
+        	if (ctx.weight_at_level() != null)
+        		this.cost = ctx.weight_at_level().getText();
+            ASPCore2Parser.BodyContext bodyContext = ctx.body();
+            if (bodyContext != null) {
+                bodyText = bodyContext.getText();
+                this.body = bodyText;
+            }
+			return null;
+        }
+        
+        public String get_body() {
+        	return this.body;
+        }
+        
+        public String get_cost() {
+        	return this.cost;
+        }
+    }
+
+
 class VariableExtractor extends ASPCore2BaseVisitor<Map<String, List<String>>> {
+	
+	private Integer cost;
+	
 	@Override
     public Map<String, List<String>>  visitProgram(ASPCore2Parser.ProgramContext ctx) {
 		Map<String, List<String>> variables = new HashMap<>();
@@ -56,6 +125,35 @@ class VariableExtractor extends ASPCore2BaseVisitor<Map<String, List<String>>> {
         	variables.putAll(visit(statementContext));
         }
         return variables;
+    }
+    
+    @Override
+    public Map<String, List<String>> visitStatement_weightConstraint(ASPCore2Parser.Statement_weightConstraintContext ctx) {
+    	// Extract the cost from the weight_at_level context
+        if (ctx.weight_at_level() != null) {
+            visit(ctx.weight_at_level());
+        }
+        return visit(ctx.body());
+    }
+    
+    @Override
+    public Map<String, List<String>> visitWeight_at_level(ASPCore2Parser.Weight_at_levelContext ctx) {
+        // Extract the cost (first term in weight_at_level)
+        if (ctx.term() != null && !ctx.term().isEmpty()) {
+            ASPCore2Parser.TermContext costTerm = ctx.term(0);
+            
+            if (costTerm != null) {
+            	System.out.print("COSTO: " +costTerm.getText());
+                // Assuming the cost is a numeric value
+                this.cost = Integer.parseInt(costTerm.getText());
+            }
+        }
+        Map<String, List<String>> variables = new HashMap<>();
+        return variables;
+    }
+
+    public Integer getCost() {
+        return this.cost;
     }
 
     @Override
@@ -127,7 +225,8 @@ class VariableExtractor extends ASPCore2BaseVisitor<Map<String, List<String>>> {
         while (ctx != null && ctx.term() != null) {
         	ASPCore2Parser.TermContext termContext = ctx.term();
             Map<String, List<String>> termResult = visit(termContext);
-            termResult.forEach((key, value) -> variables.computeIfAbsent(key, k -> new ArrayList<>()).addAll(value));
+            if (termResult != null)
+            	termResult.forEach((key, value) -> variables.computeIfAbsent(key, k -> new ArrayList<>()).addAll(value));
             ctx = ctx.terms();
         }
         return variables;

@@ -31,11 +31,16 @@ public class Debugger {
 
 	private Process process;
 	private List<String> debugAtoms;
+	private Map<String, String> weak_to_aux;
+	private Map<String, Integer> level_to_cost;
+	private Map<String, ArrayList<ArrayList<String>>> level_to_aux;
 	private List<String> initialFacts;
 	private List<String> derivedAtoms;
 	private List<String> falseAtoms;
 	private List<String> rules;
 	private List<String> order;
+	private String multipleOrders;
+	private List<String> grounded;
 	private QueryAtom analyzed;
 	boolean onlyFacts;
 	private List<String> rulesIgnored;
@@ -43,17 +48,25 @@ public class Debugger {
 	private List<UnsatisfiableCore> stackCore;
 	private Boolean debug_rules;
 	private Boolean debug_AS;
+	private Boolean optimization_problem;
+	private JSONArray cost;
+	private JSONObject output;
+	private int n_models = 1;
 	private List<String> unsupported;
 	private Map<String, Map<String, String>> truth_aggregate;
 
-	public Debugger(boolean deb_rules, boolean deb_AS) {
+	public Debugger(boolean deb_rules, boolean deb_AS, String program) {
 		this.rulesIgnored = new ArrayList<String>();
 		this.order_analyzed = new ArrayList<QueryAtom>();
 		this.stackCore = new ArrayList<UnsatisfiableCore>();
 		this.debug_rules = deb_rules;
 		this.debug_AS = deb_AS;
 		this.unsupported = new ArrayList<String>();
-		this.truth_aggregate = new HashMap<String, Map<String, String>>();
+		this.truth_aggregate = new HashMap<String, Map<String, String>>(); 
+		this.weak_to_aux = new HashMap<String, String>();
+		this.level_to_aux = new HashMap<String, ArrayList<ArrayList<String>>>();
+		this.level_to_cost = new HashMap<String, Integer>();
+		checkOpt(program);
 	}	
 	
 	
@@ -63,28 +76,116 @@ public class Debugger {
 	}
 	
 	
-	void computeAtoms(String program) throws IOException {
+	Boolean computeAnswerSets(String program, Integer n) throws IOException {
 		derivedAtoms = new ArrayList<String>();
 		falseAtoms = new ArrayList<String>();
 		File helper = new File(Settings.getHelperPath());
 		String tmp = fileToString(helper);
-		tmp = tmp + program;
-		String output = launchSolver(tmp, "--models=1", "--outf=2", true);
+		String output;
+		if (!optimization_problem) {
+			tmp = tmp + program;
+			output = launchSolver(tmp, "--models=" + String.valueOf(n), "--outf=2", true);
+		} else { 
+			String tmp_program = add_aux_program(program);
+			tmp = tmp + tmp_program;
+			output = launchSolver(tmp, "--models=" + String.valueOf(n) + " --quiet=1,1,2", "--outf=2", true);
+		}
 		File tmpFile = new File(".tmp_file2");
-		String output_info = fileToString(tmpFile); 
+		// Bisogna selezionare l'n-esimo modello, che corrisponde a quello scelto dall'utente, ora mettiamo l'ultimo
+		String grounded_tmp = get_ground(fileToString(tmpFile));
+		multipleOrders = fileToString(tmpFile);
 		tmpFile.delete();
-		String output_split = output_info.split("start:")[1];
-		String[] output_tmp = output_split.split("-mid-");
-		String grounded_tmp = output_tmp[0];
-		String order_tmp = output_tmp[1];
-		order_tmp = order_tmp.replace("\n", "");
+		this.grounded = new ArrayList<String>(Arrays.asList(grounded_tmp.split(";")));
+		JSONObject obj = new JSONObject(output);
+		if (obj.has("Result")) {
+			if (obj.get("Result").equals("UNSATISFIABLE")) {
+				return false;
+			}
+		}
+		this.output = obj;
+		return true;
+	}
+	
+	JSONObject getJSONArrayOutput() {
+		return this.output;
+	}
+	
+	List<String> getAnswerSets() {
+		ArrayList<String> answerSets = new ArrayList<String>();
+		try {
+			JSONArray arr = (JSONArray) this.output.get("Call");
+			JSONArray models = (JSONArray) arr.getJSONObject(0).get("Witnesses");
+			for (int i = 0; i < models.length(); i++) {
+				JSONObject tmpAS = (JSONObject) models.get(i);
+				answerSets.add(tmpAS.get("Value").toString().substring(1, tmpAS.get("Value").toString().length()-1).replace("\\\"", "'"));
+			}
+		} catch (Exception e) {
+			throw e;
+		}
+		return answerSets;
+	}
+	
+	void ComputeAtomsDerived(int i) {
+		JSONArray arr = (JSONArray) this.output.get("Call");
+		JSONArray model = (JSONArray) arr.getJSONObject(0).get("Witnesses");
+		JSONArray answerset = (JSONArray) model.getJSONObject(i).get("Value");
+		String order_tmp = get_info(i);
+		order = new ArrayList<String>(Arrays.asList(order_tmp.split(";")));
+		for (int j = 0; j < answerset.length(); j++) {
+			String atom = answerset.getString(j);
+			if (atom.startsWith("__debug") || atom.equals(""))
+				continue;
+			if (!initialFacts.contains(atom)) {
+				derivedAtoms.add(atom);
+				if (this.falseAtoms.contains(atom))
+					this.falseAtoms.remove(atom);
+				}	
+			}
+			for (String ground : grounded) {
+				if (!derivedAtoms.contains(ground) & !initialFacts.contains(ground) & !(ground.equals("") & !this.falseAtoms.contains(ground)))
+					this.falseAtoms.add(ground);
+			}
+			if (optimization_problem)
+				update_cost();
+	
+	}
+	
+	
+	Boolean computeAtoms(String program) throws IOException {
+		derivedAtoms = new ArrayList<String>();
+		falseAtoms = new ArrayList<String>();
+		File helper = new File(Settings.getHelperPath());
+		String tmp = fileToString(helper);
+		String output;
+		if (!optimization_problem) {
+			tmp = tmp + program;
+			output = launchSolver(tmp, "--models=" + String.valueOf(this.n_models), "--outf=2", true);
+		} else { 
+			String tmp_program = add_aux_program(program);
+			tmp = tmp + tmp_program;
+			output = launchSolver(tmp, "--quiet=1,1,2", "--outf=2", true);
+		}
+		File tmpFile = new File(".tmp_file2");
+		// Bisogna selezionare l'n-esimo modello, che corrisponde a quello scelto dall'utente, ora mettiamo l'ultimo
+		String grounded_tmp = get_ground(fileToString(tmpFile));
+		String order_tmp;
+		if (!optimization_problem)
+			order_tmp = get_info(fileToString(tmpFile), -1);
+		else 
+			order_tmp = get_info(fileToString(tmpFile), -1);
+		tmpFile.delete();
 		ArrayList<String> grounded = new ArrayList<String>(Arrays.asList(grounded_tmp.split(";")));
 		order = new ArrayList<String>(Arrays.asList(order_tmp.split(";")));
+		JSONObject obj = new JSONObject(output);
+		if (obj.has("Result")) {
+			if (obj.get("Result").equals("UNSATISFIABLE")) {
+				return false;
+			}
+		}
 		try {
-			JSONObject obj = new JSONObject(output);
 			JSONArray arr = (JSONArray) obj.get("Call");
 			JSONArray model = (JSONArray) arr.getJSONObject(0).get("Witnesses");
-			JSONArray answerset = (JSONArray) model.getJSONObject(0).get("Value");
+			JSONArray answerset = (JSONArray) model.getJSONObject(model.length()-1).get("Value");
 			for (int j = 0; j < answerset.length(); j++) {
 				String atom = answerset.getString(j);
 				if (atom.startsWith("__debug") || atom.equals(""))
@@ -99,8 +200,10 @@ public class Debugger {
 					if (!derivedAtoms.contains(ground) & !initialFacts.contains(ground) & !(ground.equals("") & !this.falseAtoms.contains(ground)))
 						this.falseAtoms.add(ground);
 				}
-			}
-			
+				if (optimization_problem)
+					update_cost();
+				return true;
+		}
 			catch (Exception e) {
 				throw e;
 			}
@@ -108,13 +211,34 @@ public class Debugger {
 	}
 
 		 
-	public UnsatisfiableCore debug(QueryAtom atom, List<QueryAtom> chain, List<QueryAtom> queries, String program) {				
+	public UnsatisfiableCore debug(QueryAtom atom, List<QueryAtom> chain, List<QueryAtom> queries, String program, Boolean checkOpt) {				
 		try {
 			this.analyzed = atom;
 			program = addDerived(program, atom, chain, queries);
-			program = setRulesForOrder(program, atom);
-			String extendedProgram = extendProgram(program, atom);
-			return computeMinimalCore(extendedProgram, atom);
+			//program = setRulesForOrder(program, atom);
+			String extendedProgram = extendProgram(program, atom, "", checkOpt);
+			return computeMinimalCore(extendedProgram, atom, checkOpt);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
+	public UnsatisfiableCore debug(String level, List<QueryAtom> queries, String program, Boolean checkOpt) {				
+		try {
+			program = addDerived(program, queries);
+			String extendedProgram = extendProgram(program, this.analyzed, level, checkOpt);
+			return computeMinimalCore(extendedProgram, null, checkOpt);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
+	public UnsatisfiableCore debug(String program) {				
+		try {
+			String extendedProgram = extendProgram(program);
+			return computeMinimalCore(extendedProgram);
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
@@ -132,8 +256,8 @@ public class Debugger {
 					ignore = true;
 					continue;
 				}
-				if (ignore)
-					atoms.add(i);
+				//if (ignore)
+				//	atoms.add(i);
 			}
 		}
 		
@@ -160,6 +284,8 @@ public class Debugger {
 		StringBuilder builder = new StringBuilder();
 		builder.append("\n%Add Answer Set\n");
 		for (QueryAtom q : queries) {
+			if (this.unsupported.contains(q.getAtom()))
+				continue;
 			if (q.equals(atom)) {
 				if (q.getValue() == QueryAtom.FALSE) 
 					builder.append(":- not " + q.getAtom() + ".\n");
@@ -183,28 +309,54 @@ public class Debugger {
 	}
 
 	
+	private String addDerived(String program, List<QueryAtom> queries) {
+		StringBuilder builder = new StringBuilder();
+		builder.append("\n%Add Answer Set\n");
+		for (QueryAtom q : queries) {
+			if (q.getValue() == QueryAtom.FALSE) 
+					builder.append(":- " + q.getAtom() + ".\n");
+				else
+					builder.append(":- not " + q.getAtom() + ".\n");
+		}
+		return program + builder.toString();
+	}
+	
 	
 	public List<QueryAtom> populateQuery() {
 		ArrayList<QueryAtom> qa = new ArrayList<QueryAtom>();
-		//for (String i : initialFacts) {
-		//	qa.add(new QueryAtom(i, QueryAtom.TRUE));
-		//}
+		
 		if (derivedAtoms != null) {
 			for (String i : derivedAtoms) {
-				qa.add(new QueryAtom(i, QueryAtom.TRUE));
+				if (!i.startsWith("aux(")) {
+					qa.add(new QueryAtom(i, QueryAtom.TRUE));
+				}
 			}
 		}
+		
 		for (String i : falseAtoms) {
-			qa.add(new QueryAtom(i, QueryAtom.FALSE));
+			if (!i.startsWith("aux(")) {
+				if(!this.unsupported.contains(i)) {
+					qa.add(new QueryAtom(i, QueryAtom.FALSE));
+				}
+			}
 		}
-		//for (String i : rules) {
-		//	qa.add(new QueryAtom(i, QueryAtom.NOT_SET));
-		//}
-		
-		
 		return qa;
 	}
 	
+	
+	private void checkOpt(String program) {
+		this.optimization_problem = false;
+		for(String line : program.split("\n")) {
+			if (line.trim().startsWith(":~") || line.trim().startsWith("#minimize") || line.trim().startsWith("#maximize")) {
+				this.optimization_problem = true;
+				break;
+			}
+		}
+	}
+	
+	public Boolean isOpt() {
+		return this.optimization_problem;
+	}
 	
 	private File stringToTmpFile(String program) throws IOException {
 		File tempFile = File.createTempFile("e-asp-", ".tmp.asp");
@@ -247,9 +399,154 @@ public class Debugger {
 			}
 		}
 	}	
+	
+	private String get_info(String program, int n) {
+		int index = 1;
+		String last_order = "";
+		for(String line : program.split("\n")) {
+			if (line.startsWith("-mid-")) {
+				if (index == n & n != -1)
+					return line.split("-mid-")[1];
+				else {
+					last_order = line.split("-mid-")[1];
+					index += 1;
+				}
+			}
+		}
+		return last_order;
+	}
+	
+	private String get_info(int n) {
+		int index = 0;
+		String last_order = "";
+		for(String line : multipleOrders.split("\n")) {
+			if (line.startsWith("-mid-")) {
+				if (index == n & n != -1)
+					return line.split("-mid-")[1];
+				else {
+					last_order = line.split("-mid-")[1];
+					index += 1;
+				}
+			}
+		}
+		return last_order;
+	}
+	
+	private String get_ground(String program) {
+		return program.split("\\n-mid-")[0].replace("start:", "");
+	}
+	
+	
+	private void update_cost() {
+		for(String atom : this.derivedAtoms) {
+			if (atom.startsWith("aux(")) {
+				String[] tmp_values = atom.split(",");
+				String tmp_cost = tmp_values[tmp_values.length-2];
+				String last_element = tmp_values[tmp_values.length-1].replace(")", "");
+				if (this.level_to_cost.keySet().contains(last_element))
+					this.level_to_cost.put(last_element, this.level_to_cost.get(last_element) + Integer.parseInt(tmp_cost));
+				else
+					this.level_to_cost.put(last_element, Integer.parseInt(tmp_cost));
+			}
+		}
+	}
+	
+	public List<CostLevel> getCostLevel() {
+		List<CostLevel> tmp_list = new ArrayList<CostLevel>();
+		for (Entry<String, Integer> lev_cost : this.level_to_cost.entrySet())
+			tmp_list.add(new CostLevel(lev_cost.getKey(), lev_cost.getValue()));
+		return tmp_list;
+	}
+	
+	
+	private String extendProgram(String p) {
+		
+		debugAtoms = new ArrayList<String>();
+		String[] lines = p.split("\n");
+		StringBuilder builder = new StringBuilder();
+		int cont = 0;
+		String info = "% no description";
+		for (int i = 0; i < lines.length; i++) {
+			cont++;
+			String line = lines[i].trim();
+			if (line.startsWith("%@description: ")) {
+				info = line.replaceAll("@description:", "");
+				continue;
+			}
+			if (line.startsWith("%"))
+				continue;
+			if (line.isEmpty())
+				continue;
+			if (line.contains("#const")) {
+				builder.append(line + "\n");
+				continue;
+			}
+			if (line.contains("@correct")) {
+				line = line.replace("@correct", "");
+				continue;
+			}
+			if (line.contains("@ignore")) {
+				line = line.replace("@ignore", "");
+				continue;
+			}
+			
+			String line_parsed = line.replace("\"", "'");
+			
+			if (line.trim().startsWith(":~") || line.trim().startsWith("#minimize") || line.trim().startsWith("#maximize")) { 
+				continue;
+			}
+				
+			if(debug_rules) {
+				boolean add_aggregate = false;
+				String deb = "";
+				if (line.contains(":-")) {
+					if (line.contains("#count") || line.contains("#sum")) {
+						add_aggregate = true;
+						List<String> ground_aggs = find_var(line_parsed);
+						line = line.substring(0, line.length() - 1) + ", not " + ground_aggs.get(0) + ".";
+						builder.append(line + "\n");
+						for (String ground_agg : ground_aggs.subList(1, ground_aggs.size())) {
+							builder.append("{" + ground_agg + "}.\n");
+							debugAtoms.add(ground_agg);
+						}
+						//deb = "__debug(\"" + line_parsed + "\",3,start" +temp_vars +",end,"+ cont + ")";
+					}
+					else
+						deb = "__debug(\"" + line_parsed + "\",0," + cont + ")";
+					
+					line = line.substring(0, line.length() - 1) + ", not " + deb + ".";
+					if (!add_aggregate)
+						debugAtoms.add(deb);
+				} else if (line.contains(".")) {
+					if (line.contains("{") || line.contains("|")) {
+						deb = "__debug(\"" + line_parsed + "\",0," + cont + ")";
+						line = line.substring(0, line.length() - 1) + ":- not " + deb + ".";
+					}
+					else {
+						deb = "__debug(\"" + line_parsed + "\",1," + cont + ")";
+						line = line.substring(0, line.length() - 1) + ":- not " + deb + ".";
+					}
+					debugAtoms.add(deb);
+				} else {
+					continue;
+				}
+				
+				if (!add_aggregate) {
+					builder.append(line + "\n");
+					builder.append("{" + deb + "}.\n");
+				}
+				
+			} else {
+				builder.append(line + "\n");
+			}
+		}
+			
+		return builder.toString();
+	}
+	
 
 
-	private String extendProgram(String p, QueryAtom atom) {
+	private String extendProgram(String p, QueryAtom atom, String level, Boolean checkOpt) {
 		debugAtoms = new ArrayList<String>();
 		String[] lines = p.split("\n");
 		StringBuilder builder = new StringBuilder();
@@ -286,6 +583,29 @@ public class Debugger {
 			
 			String line_parsed = line.replace("\"", "'");
 			if (!start_AS) {
+				
+				if (line.trim().startsWith(":~") || line.trim().startsWith("#minimize") || line.trim().startsWith("#maximize")) { 
+					if (checkOpt) {
+						ArrayList<String> costs = read_costs(line);
+						String aux = generate_aux(costs);
+						String tmp_body = generate_body(line);
+						costs.add(tmp_body);
+						this.weak_to_aux.put(tmp_body, aux);
+						if (this.level_to_aux.keySet().contains(costs.get(2)))
+							this.level_to_aux.get(costs.get(2)).add(costs);
+						else {
+							ArrayList<ArrayList<String>> list = new ArrayList<ArrayList<String>>();
+							this.level_to_aux.put(costs.get(2), list);
+					      	this.level_to_aux.get(costs.get(2)).add(costs);
+						}
+						line = aux + " :- " + tmp_body + " .";
+						builder.append(line + "\n");
+						continue;
+					}
+					else 
+						continue;
+				}
+				
 				if(debug_rules) {
 					boolean add_aggregate = false;
 					String deb = "";
@@ -308,7 +628,7 @@ public class Debugger {
 						if (!add_aggregate)
 							debugAtoms.add(deb);
 					} else if (line.contains(".")) {
-						if (line.contains("{")) {
+						if (line.contains("{") || line.contains("|")) {
 							deb = "__debug(\"" + line_parsed + "\",0," + cont + ")";
 							line = line.substring(0, line.length() - 1) + ":- not " + deb + ".";
 						}
@@ -372,15 +692,54 @@ public class Debugger {
 				info = "% no description";
 		}
 		
-		if (atom.getValue() == QueryAtom.TRUE)
-			builder.append(":- " + atom.getAtom() + ".\n");
-		else
-			builder.append(":- not " + atom.getAtom() + ".\n");
+		if (!checkOpt) {
+			if (atom.getValue() == QueryAtom.TRUE)
+				builder.append(":- " + atom.getAtom() + ".\n");
+			else
+				builder.append(":- not " + atom.getAtom() + ".\n");
+		}
 		
+		if (checkOpt) {
+			
+			for(Entry<String, ArrayList<ArrayList<String>>> level_to_aux : this.level_to_aux.entrySet()) {
+				String tmp_line  = ":- #sum{";
+				Boolean first = true;
+				for (ArrayList<String> aux : level_to_aux.getValue()) {
+					if (!first)
+						tmp_line += "; ";
+					tmp_line += aux.get(1);
+					if (aux.get(0) != "") 
+						tmp_line += "," + aux.get(0);
+					tmp_line += ":" + generate_aux(aux);
+					first = false;
+				}
+				if (level.equals(level_to_aux.getKey()))
+					tmp_line += "} >= " + this.level_to_cost.get(level_to_aux.getKey()) + ".\n";
+				else
+					tmp_line += "} != " + this.level_to_cost.get(level_to_aux.getKey()) + ".\n";
+				builder.append(tmp_line);
+			}
+		}
 		return builder.toString();
 	}
 	
 	
+	private String add_aux_program(String program) {
+		StringBuilder builder = new StringBuilder();
+		for (String line : program.split("\n")) {
+			builder.append(line + "\n");
+			if (line.trim().startsWith(":~") || line.trim().startsWith("#minimize") || line.trim().startsWith("#maximize")) { 
+				ArrayList<String> costs = read_costs(line);
+				String aux = generate_aux(costs);
+				String tmp_body = generate_body(line);
+				costs.add(tmp_body);
+				line = aux + " :- " + tmp_body + " .";
+				builder.append(line + "\n");
+			}
+		}
+		return builder.toString();
+	}
+
 	private boolean checkCoherence(String extendedProgram, List<String> core) throws IOException {
 		String tmp = extendedProgram;
 		for (int i = 0; i < core.size(); i++) {
@@ -390,11 +749,97 @@ public class Debugger {
 		return (!isIncoherent(tmp, "--outf=1", "--keep-facts"));			
 	}
 
-	private UnsatisfiableCore computeMinimalCore(String extendedProgram, QueryAtom atom) throws Exception {
+	
+	private UnsatisfiableCore computeMinimalCore(String extendedProgram)  throws Exception {
 		UnsatisfiableCore unsatCore = new UnsatisfiableCore();	
-		if (this.unsupported.contains(atom.getAtom())) {
-			unsatCore.addRule("No rules with atom in the head", 0);
+		System.out.print(extendedProgram);
+		
+		// Check Coherence is True when the program is sat
+		if(checkCoherence(extendedProgram, debugAtoms))
 			return unsatCore;
+		
+		//The program is known to be incoherent under all assumptions!
+		List<String> smallCore = new ArrayList<String>();
+		int value = 1;
+		while(checkCoherence(extendedProgram, smallCore)) {
+			smallCore = new ArrayList<String>();
+			for(int i = 0; i < value && i < debugAtoms.size(); i++)
+				smallCore.add(debugAtoms.get(i));
+			value *= 2;
+		}
+		List<String> core = smallCore;
+		
+		List<String> minimalCore = new ArrayList<String>();
+		while (!core.isEmpty()) {
+			String tmp = extendedProgram;
+			String last = core.remove(core.size() - 1);
+			for (int i = 0; i < core.size(); i++) {
+				tmp += ":- " + core.get(i) + ".\n";
+			}
+			for (int i = 0; i < minimalCore.size(); i++) {
+				tmp += ":- " + minimalCore.get(i) + ".\n";
+			}
+			if (!isIncoherent(tmp, "--outf=1", "--keep-facts"))
+				minimalCore.add(last);
+		}		
+		
+		
+		for (String s : minimalCore) {
+			Pattern pattern = Pattern.compile("__debug\\((\".*\"),([^3]),([^,]*)\\)");
+			Matcher m = pattern.matcher(s);
+			if (m.find()) {
+				String tmp_considered = m.group(1).replaceAll("\"", "").replace("\\", "");
+				unsatCore.addRule(tmp_considered, Integer.parseInt(m.group(2)));
+			}
+		}
+		
+		for (String s : minimalCore) {
+			Pattern pattern = Pattern.compile("__debug\\((\".*\"),3,start.*?end,(.*)\\)");
+			Matcher m = pattern.matcher(s);
+			if (m.find()) {
+				String tmp_considered = m.group(1).replaceAll("\"", "").replace("\\", "");
+				String[] tmp_vars = m.group(0).split(",start,")[1].split(",end,")[0].split(",");
+				for (int i = 0; i + 1 < tmp_vars.length; i += 2) {
+					String ref = tmp_vars[i].replace("\"", "");
+					tmp_considered = tmp_considered.replaceAll("\\b"+ref+"\\b", tmp_vars[i+1]);
+				}
+			
+			unsatCore.addRule(tmp_considered, 0);
+			}	
+		}
+		
+		for (String s : minimalCore) {
+			Pattern pattern = Pattern.compile("__support\\((\".*\"),(.*),(.*)\\)");
+			Matcher m = pattern.matcher(s);
+			if (m.find()) {
+				
+				
+				if (this.debug_rules) {
+					List<String> head_rules = searchHead(m.group(1).replaceAll("\"", ""), extendedProgram);
+					for (String head : head_rules) {
+						if (head.contains("#count") || head.contains("#sum"))
+							unsatCore.addRule(head, 0);
+						else if (!head.contains(":-") && !head.contains("{") && !head.contains("|"))
+							unsatCore.addRule(head, 1);
+						else
+							unsatCore.addRule(head, 0);
+					}
+				}				
+			}
+		}
+		return unsatCore;
+	}
+	
+	
+	private UnsatisfiableCore computeMinimalCore(String extendedProgram, QueryAtom atom, Boolean checkOpt) throws Exception {
+		UnsatisfiableCore unsatCore = new UnsatisfiableCore();	
+		System.out.print(extendedProgram);
+
+		if (!checkOpt) {
+			if (this.unsupported.contains(atom.getAtom())) {
+				unsatCore.addRule("No rules with atom in the head", 0);
+				return unsatCore;
+			}
 		}
 		
 		// Check Coherence is True when the program is sat
@@ -426,7 +871,7 @@ public class Debugger {
 			if (!isIncoherent(tmp, "--outf=1", "--keep-facts"))
 				minimalCore.add(last);
 		}		
-
+		
 		
 		for (String s : minimalCore) {
 			Pattern pattern = Pattern.compile("__debug\\((\".*\"),([^3]),([^,]*)\\)");
@@ -470,7 +915,7 @@ public class Debugger {
 					for (String head : head_rules) {
 						if (head.contains("#count") || head.contains("#sum"))
 							unsatCore.addRule(head, 3);
-						else if (!head.contains(":-"))
+						else if (!head.contains(":-") && !head.contains("{") && !head.contains("|"))
 							unsatCore.addRule(head, 1);
 						else
 							unsatCore.addRule(head, 0);
@@ -503,7 +948,7 @@ public class Debugger {
 	private String get_external(String rule) {
 		
 		rule = rule.split(":-")[rule.split(":-").length - 1];
-		String patternString = ",?\\s*(\\w+?\\s*(?:!=|=|<=|>=|<|>))?\\s*#(count|sum)\\{[^}]*\\}\\s*((!=|=|<=|>=|<|>)\\s\\w+)?\\s*(?:,|.){1}";
+		String patternString = ",?\\s*(\\w+?\\s*(?:!=|=|<=|>=|<|>))?\\s*#(count|sum)\\{[^}]*\\}\\s*((!=|=|<=|>=|<|>)\\s*\\w+)?\\s*(?:,|.){1}";
         Pattern pattern = Pattern.compile(patternString);
         Matcher matcher1 = pattern.matcher(rule);
         
@@ -739,6 +1184,41 @@ public class Debugger {
 		}
 	}
 	
+	private ArrayList<String> read_costs(String line) {
+		ArrayList<String> discriminant_level_cost = new ArrayList<String>();
+		String cost_block = "";
+		try {
+			cost_block = Reader.get_cost(line);
+		} catch (Exception e) {
+			e.printStackTrace();
+		} 
+		String cost = cost_block.split("@")[0].trim();
+		String level_discriminant = cost_block.split("@")[1];
+		String level = level_discriminant.split(",")[0];
+		if (level_discriminant.split(",").length > 1)
+			discriminant_level_cost.add(level_discriminant.split(",", 2)[1].trim());
+		else 
+			discriminant_level_cost.add("empty");
+		discriminant_level_cost.add(cost);
+		discriminant_level_cost.add(level);
+		return discriminant_level_cost;
+	}
+	
+	private String generate_aux(ArrayList<String> aux) {
+		String new_aux = "aux(" +aux.get(0) +"," +aux.get(1) + "," +aux.get(2) + ")";
+		return new_aux;
+	}
+	
+	private String generate_body(String line) {
+		String body = "";
+		try {
+			body = Reader.get_body(line);
+		} catch (Exception e) {
+			e.printStackTrace();
+		} 
+		return body;
+	}
+	
 	private List<String> find_var(String line_parsed) {
 		List<String> debug_atoms = new ArrayList<String>();
 		
@@ -748,9 +1228,10 @@ public class Debugger {
 			builder.append("#external " + rule + ".\n");
 		for (String rule : this.derivedAtoms)
 			builder.append("#external " + rule + ".\n");
-		for (String rule : this.falseAtoms)
-			builder.append("#external " + rule + ".\n");
-		
+		for (String rule : this.falseAtoms) {
+			if (!this.unsupported.contains(rule))
+				builder.append("#external " + rule + ".\n");
+		}
 		
 		String output = launchSolver(builder.toString(),  "--mode=gringo", "--text");
 		String[] grounded = output.split("\n");
@@ -802,7 +1283,9 @@ public class Debugger {
 				}
 				
 				
-				String outside = get_external(tmp_outside) + ".";
+				String outside = get_external(tmp_outside);
+				if (!outside.endsWith("."))
+					outside += ".";
 				try {
 					ground = Reader.search(outside);
 					if (ground.keySet().equals(non_ground.keySet())) {
@@ -810,8 +1293,12 @@ public class Debugger {
 						int i = 0;
 						for (Entry<String, List<String>> mapping : ground.entrySet()) {
 							for (String val : mapping.getValue()) {
-								new_deb += "," + vars_name.get(i) + "," + val;
-								i++;
+								try {
+									new_deb += "," + vars_name.get(i) + "," + val;
+									i++;
+								} catch (Exception e) {
+									continue;
+								}
 							}
 						}
 						 new_deb += ",end,"+ 0 + ")";
@@ -914,9 +1401,9 @@ public class Debugger {
 					Map<String, List<String>> entry = totalSet.get(outside.toString().replace(to_delete, ""));
 					boolean truth = check_truth(entry, to_delete, false);
 					if (truth)
-						temp_map.put(outside.toString().replace(to_delete, ""), " the aggregate is true, expand to see why");
+						temp_map.put(outside.toString().replace(to_delete, ""), " the aggregate is flase, expand to see why");
 					else 
-						temp_map.put(outside.toString().replace(to_delete, ""), " the aggregate is false, expand to see why");
+						temp_map.put(outside.toString().replace(to_delete, ""), " the aggregate is true, expand to see why");
 					
 					if (to_delete.contains(">") || to_delete.contains("<")) {
 						if (truth)

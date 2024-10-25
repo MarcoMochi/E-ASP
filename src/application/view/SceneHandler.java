@@ -2,7 +2,10 @@ package application.view;
 
 import application.Settings;
 import application.controller.AnswerSetInspectionController;
+import application.controller.AnswerSetSelectionController;
+import application.controller.CostExplanationController;
 import application.controller.ExplanationController;
+import application.controller.DebuggerController;
 import application.controller.SettingsController;
 import application.model.debugger.Justifier;
 import application.model.debugger.QueryAtom;
@@ -106,6 +109,14 @@ public class SceneHandler {
         AnswerSetInspectionController controller = obj.loader().getController();
         controller.init(answerSet, justifier);
     }
+    
+    public void showSelectAnswerSetWindow(List<String> answerSets, Justifier justifier) {
+    	LoaderRootObject<Parent> obj = loadFXML("AnswerSetSelection.fxml");
+        explanationsStack.add(obj.root());
+        scene.setRoot(obj.root());
+        AnswerSetSelectionController controller = obj.loader().getController();
+        controller.init(answerSets, justifier);
+    }
 
     public void showExplanationWindow(Justifier justifier, List<QueryAtom> answerSet, List<QueryAtom> chain, List<Response> response) {
         LoaderRootObject<Parent> obj = loadFXML("Explanation.fxml");
@@ -113,6 +124,22 @@ public class SceneHandler {
         scene.setRoot(obj.root());
         ExplanationController controller = obj.loader().getController();
         controller.init(justifier, answerSet, chain, response);
+    }
+    
+    public void showCostWindow(Justifier justifier, List<QueryAtom> answerSet, List<Response> response) {
+        LoaderRootObject<Parent> obj = loadFXML("CostExplanation.fxml");
+        explanationsStack.add(obj.root());
+        scene.setRoot(obj.root());
+        CostExplanationController controller = obj.loader().getController();
+        controller.init(justifier, answerSet, response);
+    }
+    
+    public void showDebuggerWindow(Justifier justifier, List<Response> response) {
+        LoaderRootObject<Parent> obj = loadFXML("UnsatExplanation.fxml");
+        explanationsStack.add(obj.root());
+        scene.setRoot(obj.root());
+        DebuggerController controller = obj.loader().getController();
+        controller.init(justifier, response);
     }
 
     public void back() {

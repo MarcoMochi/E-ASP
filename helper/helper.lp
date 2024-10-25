@@ -68,7 +68,7 @@ class Propagator:
 
 def on_model(res):
     global final_order
-    final_order = order.copy()
+    final_order.append(order.copy())
 
 
 class Observer:
@@ -82,8 +82,11 @@ def main(prg):
     prg.register_propagator(Propagator())
     prg.ground([("base", [])])
     with prg.solve(yield_=True, on_model=on_model) as hnd:
+        for m in hnd:
+            continue
         hnd.wait()
     with open("./.tmp_file2", "w") as w:
         w.write(f"start:{';'.join(heads)}")
-        w.write(f"-mid-{';'.join([x for x in final_order if 'clingo.symbolic_atoms' not in x])}")
+        for line in final_order:
+            w.write(f"\n-mid-{';'.join([x for x in line if 'clingo.symbolic_atoms' not in x])}")
 #end.
