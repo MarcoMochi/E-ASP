@@ -3,8 +3,8 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>E-ASP</groupId>
     <artifactId>E-ASP</artifactId>
-
     <version>Version-1.0</version>
+    <packaging>jar</packaging>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <javafx.version>22.0.2</javafx.version>
@@ -36,7 +36,14 @@
             <artifactId>javafx-fxml</artifactId>
             <version>${javafx.version}</version>
         </dependency>
+		
+		<dependency>
+		    <groupId>org.apache.maven.plugins</groupId>
+		    <artifactId>maven-shade-plugin</artifactId>
+		    <version>3.6.0</version>
+		</dependency>
 
+		
         <dependency>
             <groupId>org.fxmisc.richtext</groupId>
             <artifactId>richtextfx</artifactId>
@@ -106,6 +113,7 @@
                     </execution>
                 </executions>
             </plugin>
+
             <plugin>
         		<groupId>org.antlr</groupId>
         		<artifactId>antlr4-maven-plugin</artifactId>
