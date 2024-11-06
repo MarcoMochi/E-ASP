@@ -16,9 +16,9 @@ public class Reader {
 	 public static Map<String, List<String>> search(String rule) throws Exception {
 		
 		if (rule.split(":-").length > 1)
-			rule = "fake :- " + rule.split(":-")[1];
+			rule = "temp :- " + rule.split(":-")[1];
 		else
-			rule = "fake :- " + rule.split(":-")[0];
+			rule = "temp :- " + rule.split(":-")[0];
 		
     	CharStream input = CharStreams.fromString(rule);
 
@@ -143,7 +143,6 @@ class VariableExtractor extends ASPCore2BaseVisitor<Map<String, List<String>>> {
             ASPCore2Parser.TermContext costTerm = ctx.term(0);
             
             if (costTerm != null) {
-            	System.out.print("COSTO: " +costTerm.getText());
                 // Assuming the cost is a numeric value
                 this.cost = Integer.parseInt(costTerm.getText());
             }

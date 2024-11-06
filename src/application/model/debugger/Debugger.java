@@ -752,7 +752,6 @@ public class Debugger {
 	
 	private UnsatisfiableCore computeMinimalCore(String extendedProgram)  throws Exception {
 		UnsatisfiableCore unsatCore = new UnsatisfiableCore();	
-		System.out.print(extendedProgram);
 		
 		// Check Coherence is True when the program is sat
 		if(checkCoherence(extendedProgram, debugAtoms))
@@ -833,7 +832,6 @@ public class Debugger {
 	
 	private UnsatisfiableCore computeMinimalCore(String extendedProgram, QueryAtom atom, Boolean checkOpt) throws Exception {
 		UnsatisfiableCore unsatCore = new UnsatisfiableCore();	
-		System.out.print(extendedProgram);
 
 		if (!checkOpt) {
 			if (this.unsupported.contains(atom.getAtom())) {
