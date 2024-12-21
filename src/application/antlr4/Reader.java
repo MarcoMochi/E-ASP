@@ -20,6 +20,7 @@ public class Reader {
 		else
 			rule = "temp :- " + rule.split(":-")[0];
 		
+		
     	CharStream input = CharStreams.fromString(rule);
 
         ASPCore2Lexer lexer = new ASPCore2Lexer(input);
@@ -36,7 +37,7 @@ public class Reader {
     }
 	 
 	 public static String get_body(String rule) throws Exception {
-
+		 
 		 	CharStream input = CharStreams.fromString(rule);
 
 	        ASPCore2Lexer lexer = new ASPCore2Lexer(input);
@@ -54,7 +55,7 @@ public class Reader {
 	    }
 	 
 	 public static String get_cost(String rule) throws Exception {
-
+		 
 		 	CharStream input = CharStreams.fromString(rule);
 
 	        ASPCore2Lexer lexer = new ASPCore2Lexer(input);

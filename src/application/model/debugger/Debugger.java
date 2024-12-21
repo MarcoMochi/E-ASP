@@ -3,9 +3,11 @@ package application.model.debugger;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -215,7 +217,7 @@ public class Debugger {
 		try {
 			this.analyzed = atom;
 			program = addDerived(program, atom, chain, queries);
-			//program = setRulesForOrder(program, atom);
+			program = setRulesForOrder(program, atom);
 			String extendedProgram = extendProgram(program, atom, "", checkOpt);
 			return computeMinimalCore(extendedProgram, atom, checkOpt);
 		} catch (Exception e) {
@@ -256,8 +258,8 @@ public class Debugger {
 					ignore = true;
 					continue;
 				}
-				//if (ignore)
-				//	atoms.add(i);
+				if (ignore)
+					atoms.add(i);
 			}
 		}
 		
@@ -502,7 +504,7 @@ public class Debugger {
 				if (line.contains(":-")) {
 					if (line.contains("#count") || line.contains("#sum")) {
 						add_aggregate = true;
-						List<String> ground_aggs = find_var(line_parsed);
+						List<String> ground_aggs = find_var(line);
 						line = line.substring(0, line.length() - 1) + ", not " + ground_aggs.get(0) + ".";
 						builder.append(line + "\n");
 						for (String ground_agg : ground_aggs.subList(1, ground_aggs.size())) {
@@ -652,7 +654,7 @@ public class Debugger {
 				}
 			}
 			
-			if (start_AS) {
+			if (start_AS ) {
 				
 				String sup = "__support(\"" + line_parsed + "\",0," + cont + ")";
 				debugAtoms.add(sup);
@@ -665,15 +667,12 @@ public class Debugger {
 				else
 					continue;
 				
-				
 				builder.append(atom_tmp.substring(0, atom_tmp.length()-1) + " :- " + sup + ".\n");
 				builder.append("{" + sup + "}.\n");
+				String deb = "__debug(\"" + atom_tmp + "\",2," + cont + ")";
+				debugAtoms.add(deb);
 				
 				if(debug_AS) {
-			
-					String deb = "__debug(\"" + atom_tmp + "\",2," + cont + ")";
-					debugAtoms.add(deb);
-			
 					if (line.contains(":-")) {
 						line = line.substring(0, line.length() - 1) + ", not " + deb + ".";
 					} else if (line.contains(".")) {
@@ -683,9 +682,9 @@ public class Debugger {
 					}
 					builder.append(line + "\n");
 					builder.append("{" + deb + "}.\n");
-			} else {
-				builder.append(line + "\n");
-				}
+				} else if (!checkOpt)
+					builder.append(line + "\n");
+					
 			}
 				
 			if (!info.equalsIgnoreCase("% no description"))
@@ -720,6 +719,7 @@ public class Debugger {
 				builder.append(tmp_line);
 			}
 		}
+	
 		return builder.toString();
 	}
 	

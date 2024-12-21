@@ -12,18 +12,25 @@
 
 <AnchorPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="application.controller.AnswerSetInspectionController">
-   <BorderPane prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"
+   <BorderPane prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"
                AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
       <center>
-	      <VBox>
-	         <ListView fx:id="allAtoms" prefHeight="200.0" prefWidth="200.0"/>
-	         <Label fx:id="textLevels" text="Select the cost@level to explain optimality">
-               <HBox.margin>
-                  <Insets left="10.0"/>
-               </HBox.margin>
-            </Label>
-	         <ListView fx:id="allLevels" prefHeight="50.0" prefWidth="200.0" BorderPane.alignment="CENTER"/>
-	      </VBox>
+         <VBox alignment="CENTER" spacing="10.0" AnchorPane.topAnchor="0.0" AnchorPane.bottomAnchor="0.0">
+            <!-- First ListView with dynamic height -->
+            <ListView fx:id="allAtoms" VBox.vgrow="ALWAYS" prefWidth="200.0"/>
+            
+            <!-- Button for Explaining Atom -->
+            <Button fx:id="explainAtom" mnemonicParsing="false" onAction="#explainAtom" text="Explain Atom"/>
+            
+            <!-- Label for Levels -->
+            <Label fx:id="textLevels" text="Select the cost@level to explain optimality"/>
+            
+            <!-- Second ListView -->
+            <ListView fx:id="allLevels" prefHeight="50.0" prefWidth="200.0" VBox.vgrow="NEVER"/>
+            
+            <!-- Button for Explaining Optimality -->
+            <Button fx:id="optimalityButton" mnemonicParsing="false" onAction="#explainOptimality" text="Explain Optimality"/>
+         </VBox>
       </center>
       <top>
          <HBox alignment="CENTER_LEFT" prefHeight="30.0" prefWidth="200.0" BorderPane.alignment="CENTER">
@@ -40,20 +47,8 @@
          </HBox>
       </top>
       <bottom>
-         <VBox maxHeight="60.0" minHeight="60.0" prefHeight="60.0" prefWidth="100.0" BorderPane.alignment="CENTER">
-            <HBox alignment="CENTER" prefHeight="30.0" prefWidth="200.0">
-               <Button alignment="CENTER" mnemonicParsing="false" onAction="#explainAtom" text="Explain Atom">
-                  <HBox.margin>
-                     <Insets bottom="5.0" top="5.0"/>
-                  </HBox.margin>
-               </Button>
-               <Button fx:id="optimalityButton" alignment="CENTER" mnemonicParsing="false" onAction="#explainOptimality" text="Explain Optimality">
-                  <HBox.margin>
-                     <Insets left="10.0" bottom="5.0" top="5.0"/>
-                  </HBox.margin>
-               </Button>
-            </HBox>
-            <AnchorPane prefHeight="200.0" prefWidth="200.0">
+         <VBox maxHeight="60.0" minHeight="10.0" prefHeight="10.0" prefWidth="100.0" BorderPane.alignment="CENTER">
+            <AnchorPane prefHeight="10.0" prefWidth="200.0">
                <ProgressBar fx:id="progressBar" progress="0.0" AnchorPane.bottomAnchor="0.0"
                             AnchorPane.leftAnchor="5.0" AnchorPane.rightAnchor="5.0" AnchorPane.topAnchor="0.0"/>
             </AnchorPane>

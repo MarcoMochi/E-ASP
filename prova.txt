@@ -1,0 +1,171 @@
+x(RID,DAY,TS) : mss(DAY,TS) :- reg(RID,_), not __debug("x(RID,DAY,TS) : mss(DAY,TS) :- reg(RID,_).",0,1).
+{__debug("x(RID,DAY,TS) : mss(DAY,TS) :- reg(RID,_).",0,1)}.
+preparation_time(RID,DUR) :- reg(RID,_), DUR = #sum{D,PH: duration(RID,PH,D), PH != 4}, not __debug("preparation_time(RID,DUR) :- reg(RID,_), DUR = #sum{D,PH: duration(RID,PH,D), PH != 4}.",3,start,"RID",RID,end,0).
+{__debug("preparation_time(RID,DUR) :- reg(RID,_), DUR = #sum{D,PH: duration(RID,PH,D), PH != 4}.",3,start,"RID","pat1",end,0)}.
+{__debug("preparation_time(RID,DUR) :- reg(RID,_), DUR = #sum{D,PH: duration(RID,PH,D), PH != 4}.",3,start,"RID","pat1",end,0)}.
+{__debug("preparation_time(RID,DUR) :- reg(RID,_), DUR = #sum{D,PH: duration(RID,PH,D), PH != 4}.",3,start,"RID","pat2",end,0)}.
+{__debug("preparation_time(RID,DUR) :- reg(RID,_), DUR = #sum{D,PH: duration(RID,PH,D), PH != 4}.",3,start,"RID","pat2",end,0)}.
+{__debug("preparation_time(RID,DUR) :- reg(RID,_), DUR = #sum{D,PH: duration(RID,PH,D), PH != 4}.",3,start,"RID","pat2",end,0)}.
+{__debug("preparation_time(RID,DUR) :- reg(RID,_), DUR = #sum{D,PH: duration(RID,PH,D), PH != 4}.",3,start,"RID","pat2",end,0)}.
+{__debug("preparation_time(RID,DUR) :- reg(RID,_), DUR = #sum{D,PH: duration(RID,PH,D), PH != 4}.",3,start,"RID","pat3",end,0)}.
+{__debug("preparation_time(RID,DUR) :- reg(RID,_), DUR = #sum{D,PH: duration(RID,PH,D), PH != 4}.",3,start,"RID","pat3",end,0)}.
+{__debug("preparation_time(RID,DUR) :- reg(RID,_), DUR = #sum{D,PH: duration(RID,PH,D), PH != 4}.",3,start,"RID","pat3",end,0)}.
+:- x(RID,_,TS), reg(RID,_), preparation_time(RID,T), TS-T < 1, not __debug(":- x(RID,_,TS), reg(RID,_), preparation_time(RID,T), TS-T < 1.",0,3).
+{__debug(":- x(RID,_,TS), reg(RID,_), preparation_time(RID,T), TS-T < 1.",0,3)}.
+patient_seat_day(ID,T,RID,DAY) : seat(ID,T) :- x(RID,DAY,_), not __debug("patient_seat_day(ID,T,RID,DAY) : seat(ID,T) :- x(RID,DAY,_).",0,4).
+{__debug("patient_seat_day(ID,T,RID,DAY) : seat(ID,T) :- x(RID,DAY,_).",0,4)}.
+patient_seat_ts(ID,T,RID,DAY,TS..TS+DUR-1) :- patient_seat_day(ID,T,RID,DAY), x(RID,DAY,TS), duration(RID,3,DUR), DUR > 0, not __debug("patient_seat_ts(ID,T,RID,DAY,TS..TS+DUR-1) :- patient_seat_day(ID,T,RID,DAY), x(RID,DAY,TS), duration(RID,3,DUR), DUR > 0.",0,5).
+{__debug("patient_seat_ts(ID,T,RID,DAY,TS..TS+DUR-1) :- patient_seat_day(ID,T,RID,DAY), x(RID,DAY,TS), duration(RID,3,DUR), DUR > 0.",0,5)}.
+:- #count{RID: patient_seat_ts(ID,T,RID,DAY,TS)} > 1, seat(ID,T), mss(DAY, TS), not __debug(":- #count{RID: patient_seat_ts(ID,T,RID,DAY,TS)} > 1, seat(ID,T), mss(DAY, TS).",3,start,"ID",ID,"T",T,"DAY",DAY,"TS",TS,end,0).
+{__debug(":- #count{RID: patient_seat_ts(ID,T,RID,DAY,TS)} > 1, seat(ID,T), mss(DAY, TS).",3,start,"ID",1,"T",10,"DAY","chair1","TS","chair",end,0)}.
+{__debug(":- #count{RID: patient_seat_ts(ID,T,RID,DAY,TS)} > 1, seat(ID,T), mss(DAY, TS).",3,start,"ID",1,"T",9,"DAY","chair1","TS","chair",end,0)}.
+{__debug(":- #count{RID: patient_seat_ts(ID,T,RID,DAY,TS)} > 1, seat(ID,T), mss(DAY, TS).",3,start,"ID",1,"T",6,"DAY","chair1","TS","chair",end,0)}.
+{__debug(":- #count{RID: patient_seat_ts(ID,T,RID,DAY,TS)} > 1, seat(ID,T), mss(DAY, TS).",3,start,"ID",1,"T",5,"DAY","chair1","TS","chair",end,0)}.
+{__debug(":- #count{RID: patient_seat_ts(ID,T,RID,DAY,TS)} > 1, seat(ID,T), mss(DAY, TS).",3,start,"ID",1,"T",4,"DAY","chair1","TS","chair",end,0)}.
+{__debug(":- #count{RID: patient_seat_ts(ID,T,RID,DAY,TS)} > 1, seat(ID,T), mss(DAY, TS).",3,start,"ID",1,"T",3,"DAY","chair1","TS","chair",end,0)}.
+{__debug(":- #count{RID: patient_seat_ts(ID,T,RID,DAY,TS)} > 1, seat(ID,T), mss(DAY, TS).",3,start,"ID",1,"T",2,"DAY","chair1","TS","chair",end,0)}.
+{__debug(":- #count{RID: patient_seat_ts(ID,T,RID,DAY,TS)} > 1, seat(ID,T), mss(DAY, TS).",3,start,"ID",1,"T",1,"DAY","chair1","TS","chair",end,0)}.
+{__debug(":- #count{RID: patient_seat_ts(ID,T,RID,DAY,TS)} > 1, seat(ID,T), mss(DAY, TS).",3,start,"ID",1,"T",8,"DAY","chair1","TS","chair",end,0)}.
+{__debug(":- #count{RID: patient_seat_ts(ID,T,RID,DAY,TS)} > 1, seat(ID,T), mss(DAY, TS).",3,start,"ID",1,"T",7,"DAY","chair1","TS","chair",end,0)}.
+aux(RID,1,1) :- patient_seat_day(ID,T,RID,DAY),reg(RID,T2),T!=T2 .
+reg("pat1","bed"):- not __debug("reg('pat1','bed').",1,8).
+{__debug("reg('pat1','bed').",1,8)}.
+reg("pat2","bed"):- not __debug("reg('pat2','bed').",1,9).
+{__debug("reg('pat2','bed').",1,9)}.
+reg("pat3","chair"):- not __debug("reg('pat3','chair').",1,10).
+{__debug("reg('pat3','chair').",1,10)}.
+mss(1,1..10):- not __debug("mss(1,1..10).",1,11).
+{__debug("mss(1,1..10).",1,11)}.
+duration("pat1",4,5):- not __debug("duration('pat1',4,5).",1,12).
+{__debug("duration('pat1',4,5).",1,12)}.
+duration("pat1",1,2):- not __debug("duration('pat1',1,2).",1,13).
+{__debug("duration('pat1',1,2).",1,13)}.
+duration("pat2",4,3):- not __debug("duration('pat2',4,3).",1,14).
+{__debug("duration('pat2',4,3).",1,14)}.
+duration("pat2",3,1):- not __debug("duration('pat2',3,1).",1,15).
+{__debug("duration('pat2',3,1).",1,15)}.
+duration("pat2",1,2):- not __debug("duration('pat2',1,2).",1,16).
+{__debug("duration('pat2',1,2).",1,16)}.
+duration("pat3",4,4):- not __debug("duration('pat3',4,4).",1,17).
+{__debug("duration('pat3',4,4).",1,17)}.
+duration("pat3",3,2):- not __debug("duration('pat3',3,2).",1,18).
+{__debug("duration('pat3',3,2).",1,18)}.
+duration("pat3",1,2):- not __debug("duration('pat3',1,2).",1,19).
+{__debug("duration('pat3',1,2).",1,19)}.
+seat("chair1","chair"):- not __debug("seat('chair1','chair').",1,20).
+{__debug("seat('chair1','chair').",1,20)}.
+preparation_time('pat1',2) :- __support(":- not preparation_time('pat1',2).",0,22).
+{__support(":- not preparation_time('pat1',2).",0,22)}.
+preparation_time('pat2',3) :- __support(":- not preparation_time('pat2',3).",0,23).
+{__support(":- not preparation_time('pat2',3).",0,23)}.
+preparation_time('pat3',4) :- __support(":- not preparation_time('pat3',4).",0,24).
+{__support(":- not preparation_time('pat3',4).",0,24)}.
+x('pat1',1,9) :- __support(":- not x('pat1',1,9).",0,25).
+{__support(":- not x('pat1',1,9).",0,25)}.
+x('pat2',1,10) :- __support(":- not x('pat2',1,10).",0,26).
+{__support(":- not x('pat2',1,10).",0,26)}.
+x('pat3',1,7) :- __support(":- not x('pat3',1,7).",0,27).
+{__support(":- not x('pat3',1,7).",0,27)}.
+patient_seat_day('chair1','chair','pat1',1) :- __support(":- not patient_seat_day('chair1','chair','pat1',1).",0,28).
+{__support(":- not patient_seat_day('chair1','chair','pat1',1).",0,28)}.
+patient_seat_day('chair1','chair','pat2',1) :- __support(":- not patient_seat_day('chair1','chair','pat2',1).",0,29).
+{__support(":- not patient_seat_day('chair1','chair','pat2',1).",0,29)}.
+patient_seat_ts('chair1','chair','pat2',1,10) :- __support(":- not patient_seat_ts('chair1','chair','pat2',1,10).",0,30).
+{__support(":- not patient_seat_ts('chair1','chair','pat2',1,10).",0,30)}.
+patient_seat_day('chair1','chair','pat3',1) :- __support(":- not patient_seat_day('chair1','chair','pat3',1).",0,31).
+{__support(":- not patient_seat_day('chair1','chair','pat3',1).",0,31)}.
+patient_seat_ts('chair1','chair','pat3',1,7) :- __support(":- not patient_seat_ts('chair1','chair','pat3',1,7).",0,32).
+{__support(":- not patient_seat_ts('chair1','chair','pat3',1,7).",0,32)}.
+patient_seat_ts('chair1','chair','pat3',1,8) :- __support(":- not patient_seat_ts('chair1','chair','pat3',1,8).",0,33).
+{__support(":- not patient_seat_ts('chair1','chair','pat3',1,8).",0,33)}.
+x('pat1',1,1) :- __support(":- x('pat1',1,1).",0,34).
+{__support(":- x('pat1',1,1).",0,34)}.
+x('pat1',1,2) :- __support(":- x('pat1',1,2).",0,35).
+{__support(":- x('pat1',1,2).",0,35)}.
+x('pat1',1,3) :- __support(":- x('pat1',1,3).",0,36).
+{__support(":- x('pat1',1,3).",0,36)}.
+x('pat1',1,4) :- __support(":- x('pat1',1,4).",0,37).
+{__support(":- x('pat1',1,4).",0,37)}.
+x('pat1',1,5) :- __support(":- x('pat1',1,5).",0,38).
+{__support(":- x('pat1',1,5).",0,38)}.
+x('pat1',1,6) :- __support(":- x('pat1',1,6).",0,39).
+{__support(":- x('pat1',1,6).",0,39)}.
+x('pat1',1,7) :- __support(":- x('pat1',1,7).",0,40).
+{__support(":- x('pat1',1,7).",0,40)}.
+x('pat1',1,8) :- __support(":- x('pat1',1,8).",0,41).
+{__support(":- x('pat1',1,8).",0,41)}.
+x('pat1',1,10) :- __support(":- x('pat1',1,10).",0,42).
+{__support(":- x('pat1',1,10).",0,42)}.
+x('pat2',1,1) :- __support(":- x('pat2',1,1).",0,43).
+{__support(":- x('pat2',1,1).",0,43)}.
+x('pat2',1,2) :- __support(":- x('pat2',1,2).",0,44).
+{__support(":- x('pat2',1,2).",0,44)}.
+x('pat2',1,3) :- __support(":- x('pat2',1,3).",0,45).
+{__support(":- x('pat2',1,3).",0,45)}.
+x('pat2',1,4) :- __support(":- x('pat2',1,4).",0,46).
+{__support(":- x('pat2',1,4).",0,46)}.
+x('pat2',1,5) :- __support(":- x('pat2',1,5).",0,47).
+{__support(":- x('pat2',1,5).",0,47)}.
+x('pat2',1,6) :- __support(":- x('pat2',1,6).",0,48).
+{__support(":- x('pat2',1,6).",0,48)}.
+x('pat2',1,7) :- __support(":- x('pat2',1,7).",0,49).
+{__support(":- x('pat2',1,7).",0,49)}.
+x('pat2',1,8) :- __support(":- x('pat2',1,8).",0,50).
+{__support(":- x('pat2',1,8).",0,50)}.
+x('pat2',1,9) :- __support(":- x('pat2',1,9).",0,51).
+{__support(":- x('pat2',1,9).",0,51)}.
+x('pat3',1,1) :- __support(":- x('pat3',1,1).",0,52).
+{__support(":- x('pat3',1,1).",0,52)}.
+x('pat3',1,2) :- __support(":- x('pat3',1,2).",0,53).
+{__support(":- x('pat3',1,2).",0,53)}.
+x('pat3',1,3) :- __support(":- x('pat3',1,3).",0,54).
+{__support(":- x('pat3',1,3).",0,54)}.
+x('pat3',1,4) :- __support(":- x('pat3',1,4).",0,55).
+{__support(":- x('pat3',1,4).",0,55)}.
+x('pat3',1,5) :- __support(":- x('pat3',1,5).",0,56).
+{__support(":- x('pat3',1,5).",0,56)}.
+x('pat3',1,6) :- __support(":- x('pat3',1,6).",0,57).
+{__support(":- x('pat3',1,6).",0,57)}.
+x('pat3',1,8) :- __support(":- x('pat3',1,8).",0,58).
+{__support(":- x('pat3',1,8).",0,58)}.
+x('pat3',1,9) :- __support(":- x('pat3',1,9).",0,59).
+{__support(":- x('pat3',1,9).",0,59)}.
+x('pat3',1,10) :- __support(":- x('pat3',1,10).",0,60).
+{__support(":- x('pat3',1,10).",0,60)}.
+patient_seat_ts('chair1','chair','pat2',1,1) :- __support(":- patient_seat_ts('chair1','chair','pat2',1,1).",0,61).
+{__support(":- patient_seat_ts('chair1','chair','pat2',1,1).",0,61)}.
+patient_seat_ts('chair1','chair','pat2',1,2) :- __support(":- patient_seat_ts('chair1','chair','pat2',1,2).",0,62).
+{__support(":- patient_seat_ts('chair1','chair','pat2',1,2).",0,62)}.
+patient_seat_ts('chair1','chair','pat2',1,3) :- __support(":- patient_seat_ts('chair1','chair','pat2',1,3).",0,63).
+{__support(":- patient_seat_ts('chair1','chair','pat2',1,3).",0,63)}.
+patient_seat_ts('chair1','chair','pat2',1,4) :- __support(":- patient_seat_ts('chair1','chair','pat2',1,4).",0,64).
+{__support(":- patient_seat_ts('chair1','chair','pat2',1,4).",0,64)}.
+patient_seat_ts('chair1','chair','pat2',1,5) :- __support(":- patient_seat_ts('chair1','chair','pat2',1,5).",0,65).
+{__support(":- patient_seat_ts('chair1','chair','pat2',1,5).",0,65)}.
+patient_seat_ts('chair1','chair','pat2',1,6) :- __support(":- patient_seat_ts('chair1','chair','pat2',1,6).",0,66).
+{__support(":- patient_seat_ts('chair1','chair','pat2',1,6).",0,66)}.
+patient_seat_ts('chair1','chair','pat2',1,7) :- __support(":- patient_seat_ts('chair1','chair','pat2',1,7).",0,67).
+{__support(":- patient_seat_ts('chair1','chair','pat2',1,7).",0,67)}.
+patient_seat_ts('chair1','chair','pat2',1,8) :- __support(":- patient_seat_ts('chair1','chair','pat2',1,8).",0,68).
+{__support(":- patient_seat_ts('chair1','chair','pat2',1,8).",0,68)}.
+patient_seat_ts('chair1','chair','pat2',1,9) :- __support(":- patient_seat_ts('chair1','chair','pat2',1,9).",0,69).
+{__support(":- patient_seat_ts('chair1','chair','pat2',1,9).",0,69)}.
+patient_seat_ts('chair1','chair','pat3',1,1) :- __support(":- patient_seat_ts('chair1','chair','pat3',1,1).",0,70).
+{__support(":- patient_seat_ts('chair1','chair','pat3',1,1).",0,70)}.
+patient_seat_ts('chair1','chair','pat3',1,2) :- __support(":- patient_seat_ts('chair1','chair','pat3',1,2).",0,71).
+{__support(":- patient_seat_ts('chair1','chair','pat3',1,2).",0,71)}.
+patient_seat_ts('chair1','chair','pat3',1,3) :- __support(":- patient_seat_ts('chair1','chair','pat3',1,3).",0,72).
+{__support(":- patient_seat_ts('chair1','chair','pat3',1,3).",0,72)}.
+patient_seat_ts('chair1','chair','pat3',1,4) :- __support(":- patient_seat_ts('chair1','chair','pat3',1,4).",0,73).
+{__support(":- patient_seat_ts('chair1','chair','pat3',1,4).",0,73)}.
+patient_seat_ts('chair1','chair','pat3',1,5) :- __support(":- patient_seat_ts('chair1','chair','pat3',1,5).",0,74).
+{__support(":- patient_seat_ts('chair1','chair','pat3',1,5).",0,74)}.
+patient_seat_ts('chair1','chair','pat3',1,6) :- __support(":- patient_seat_ts('chair1','chair','pat3',1,6).",0,75).
+{__support(":- patient_seat_ts('chair1','chair','pat3',1,6).",0,75)}.
+patient_seat_ts('chair1','chair','pat3',1,9) :- __support(":- patient_seat_ts('chair1','chair','pat3',1,9).",0,76).
+{__support(":- patient_seat_ts('chair1','chair','pat3',1,9).",0,76)}.
+patient_seat_ts('chair1','chair','pat3',1,10) :- __support(":- patient_seat_ts('chair1','chair','pat3',1,10).",0,77).
+{__support(":- patient_seat_ts('chair1','chair','pat3',1,10).",0,77)}.
+patient_seat_ts('chair1','chair','pat3',1,11) :- __support(":- patient_seat_ts('chair1','chair','pat3',1,11).",0,78).
+{__support(":- patient_seat_ts('chair1','chair','pat3',1,11).",0,78)}.
+:- #sum{1,RID:aux(RID,1,1)} >= 2.
