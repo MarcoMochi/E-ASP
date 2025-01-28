@@ -20,7 +20,7 @@
             <ListView fx:id="allAtoms" VBox.vgrow="ALWAYS" prefWidth="200.0"/>
             
             <!-- Button for Explaining Atom -->
-            <Button fx:id="explainAtom" mnemonicParsing="false" onAction="#explainAtom" text="Explain Atom"/>
+            <Button fx:id="explainAtom" mnemonicParsing="false" onAction="#explainAtom" text="Explain literal"/>
             
             <!-- Label for Levels -->
             <Label fx:id="textLevels" text="Select the cost@level to explain optimality"/>
@@ -29,7 +29,7 @@
             <ListView fx:id="allLevels" prefHeight="50.0" prefWidth="200.0" VBox.vgrow="NEVER"/>
             
             <!-- Button for Explaining Optimality -->
-            <Button fx:id="optimalityButton" mnemonicParsing="false" onAction="#explainOptimality" text="Explain Optimality"/>
+            <Button fx:id="optimalityButton" mnemonicParsing="false" onAction="#explainOptimality" text="Explain optimality"/>
          </VBox>
       </center>
       <top>

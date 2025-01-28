@@ -26,7 +26,7 @@
                   <Insets bottom="5.0" left="10.0" top="5.0"/>
                </HBox.margin>
             </Button>
-            <Label text="Select the Answer Set to analyze">
+            <Label text="Select the answer set to analyze">
                <HBox.margin>
                   <Insets left="10.0"/>
                </HBox.margin>

@@ -56,6 +56,32 @@
     -fx-padding: 0 0 0 0;
 }
 
+.spinner {
+    -fx-background-color: primaryBackgroundColor;
+    -fx-border-color: primarySelectionColor;
+    -fx-border-radius: 3px;
+}
+
+.spinner .increment-arrow-button,
+.spinner .decrement-arrow-button {
+	-fx-background-color: secondaryBackgroundColor;
+	-fx-background-radius: 3px;
+}
+.spinner .increment-arrow-button:hover,
+.spinner .decrement-arrow-button:hover {
+	-fx-background-color: primarySelectionColor;
+}
+.spinner .increment-arrow-button:hover:pressed,
+.spinner .decrement-arrow-button:hover:pressed,
+.spinner .increment-arrow-button:pressed,
+.spinner .decrement-arrow-button:pressed {
+	-fx-background-color: secondarySelectionColor;
+}
+.spinner .increment-arrow-button .increment-arrow,
+.spinner .decrement-arrow-button .decrement-arrow {
+	-fx-background-color: textColor;
+}
+
 .menu:hover, .menu:hover > .label,
 .menu-item:hover, .menu-item:focused,
 .menu-item:hover > .label, .menu-item:focused > .label,

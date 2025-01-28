@@ -3,11 +3,12 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.CheckBox?>
-<?import javafx.scene.control.RadioButton?>
+<?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.control.Spinner?>
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
@@ -34,21 +35,11 @@
         </top>
         <bottom>
             <HBox maxHeight="-Infinity" prefHeight="20.0" prefWidth="200.0" spacing="5" style="-fx-padding: 4 4 4 4;" BorderPane.alignment="CENTER">
-                <Button mnemonicParsing="false" onAction="#justify" text="Explain" />
-                <CheckBox fx:id="checkRules" selected="true" style="-fx-padding: 4 0 0 0;" text="Include rules" />
-                <CheckBox fx:id="checkLiterals" selected="true" style="-fx-padding: 4 0 0 0;" text="Include literals" />
-               
-			    <RadioButton fx:id="singleAS" style="-fx-padding: 4 0 0 0;" text="1 Answer Set">
-			        <HBox.margin>
-			            <Insets right="3.0"/>
-			        </HBox.margin>
-			    </RadioButton>
-			
-			    <RadioButton fx:id="tenAS" style="-fx-padding: 4 0 0 0;" text="10 Answer Sets">
-			        <HBox.margin>
-			            <Insets right="30.0" bottom="10.0"/>
-			        </HBox.margin>
-			    </RadioButton>
+                <Button minWidth="100.0" mnemonicParsing="false" onAction="#justify" text="Explain" />
+                <CheckBox fx:id="checkRules" minWidth="150.0" selected="true" style="-fx-padding: 4 0 0 0;" text="Include rules" />
+                <CheckBox fx:id="checkLiterals" minWidth="150.0" selected="true" style="-fx-padding: 4 0 0 0;" text="Include literals" />
+                <Label minWidth="180.0" prefHeight="50.0" prefWidth="180.0" text="Answer sets to compute: " />
+            <Spinner fx:id="answerSets" editable="true" HBox.hgrow="ALWAYS" />
             <ProgressBar fx:id="progressBar" prefWidth="200.0" progress="0.0" HBox.hgrow="ALWAYS">
                <HBox.margin>
                   <Insets right="5.0" />
