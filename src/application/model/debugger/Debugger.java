@@ -84,13 +84,18 @@ public class Debugger {
 		File helper = new File(Settings.getHelperPath());
 		String tmp = fileToString(helper);
 		String output;
+		this.n_models = n;
 		if (!optimization_problem) {
 			tmp = tmp + program;
 			output = launchSolver(tmp, "--models=" + String.valueOf(n), "--outf=2", true);
 		} else { 
 			String tmp_program = add_aux_program(program);
 			tmp = tmp + tmp_program;
-			output = launchSolver(tmp, "--models=" + String.valueOf(n) + " --quiet=1,1,2", "--outf=2", true);
+			if (n > 1) 
+				output = launchSolver(tmp, "--opt-mode=optN", String.valueOf(n+1), "--quiet=1,1,2", "--outf=2", true);
+			else
+				output = launchSolver(tmp, "--opt-mode=optN", String.valueOf(n), "--quiet=1,1,2", "--outf=2", true);
+
 		}
 		File tmpFile = new File(".tmp_file2");
 		// Bisogna selezionare l'n-esimo modello, che corrisponde a quello scelto dall'utente, ora mettiamo l'ultimo
@@ -117,7 +122,10 @@ public class Debugger {
 		try {
 			JSONArray arr = (JSONArray) this.output.get("Call");
 			JSONArray models = (JSONArray) arr.getJSONObject(0).get("Witnesses");
-			for (int i = 0; i < models.length(); i++) {
+			int start = 0;
+			if (this.optimization_problem & this.n_models > 1)
+				start ++;
+			for (int i = start; i < models.length(); i++) {
 				JSONObject tmpAS = (JSONObject) models.get(i);
 				answerSets.add(tmpAS.get("Value").toString().substring(1, tmpAS.get("Value").toString().length()-1).replace("\\\"", "'"));
 			}
@@ -165,7 +173,11 @@ public class Debugger {
 		} else { 
 			String tmp_program = add_aux_program(program);
 			tmp = tmp + tmp_program;
-			output = launchSolver(tmp, "--quiet=1,1,2", "--outf=2", true);
+			if(this.n_models > 1)
+				output = launchSolver(tmp, " --opt-mode=optN", String.valueOf(this.n_models+1), "--quiet=1,1,2", "--outf=2", true);
+			else
+				output = launchSolver(tmp, " --opt-mode=optN", String.valueOf(this.n_models+1), "--quiet=1,1,2", "--outf=2", true);
+
 		}
 		File tmpFile = new File(".tmp_file2");
 		// Bisogna selezionare l'n-esimo modello, che corrisponde a quello scelto dall'utente, ora mettiamo l'ultimo
@@ -188,7 +200,10 @@ public class Debugger {
 			JSONArray arr = (JSONArray) obj.get("Call");
 			JSONArray model = (JSONArray) arr.getJSONObject(0).get("Witnesses");
 			JSONArray answerset = (JSONArray) model.getJSONObject(model.length()-1).get("Value");
-			for (int j = 0; j < answerset.length(); j++) {
+			int start = 0;
+			if (optimization_problem & this.n_models > 1)
+				start++;
+			for (int j = start; j < answerset.length(); j++) {
 				String atom = answerset.getString(j);
 				if (atom.startsWith("__debug") || atom.equals(""))
 					continue;
@@ -1983,8 +1998,32 @@ public class Debugger {
 		StringBuilder builder = new StringBuilder();
 		try {
 			File tempFile = stringToTmpFile(encoding);
-			
+			System.out.println("Executing: " + Settings.getSolverPath() + " " + tempFile.getAbsolutePath() + " " + option1 + " " + option2);
 			process = new ProcessBuilder(Settings.getSolverPath(), tempFile.getAbsolutePath(), option1, option2).start();
+			BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()));
+			if (check_error) {
+				BufferedReader br2 = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+				get_unsupported(br2, encoding);
+			}
+	
+			String line;
+			while ((line = br.readLine()) != null) {
+				builder.append(line + "\n");
+			}
+		} catch (Exception e) {
+			System.err.println(e.getMessage());
+		} finally {
+			process = null;
+		}
+		return builder.toString();
+	}
+	
+	private String launchSolver(String encoding, String option1, String option2, String option3, String option4, boolean check_error) {
+		StringBuilder builder = new StringBuilder();
+		try {
+			File tempFile = stringToTmpFile(encoding);
+			System.out.println("Executing: " + Settings.getSolverPath() + " " + tempFile.getAbsolutePath() + " " + option1 + " " + option2);
+			process = new ProcessBuilder(Settings.getSolverPath(), tempFile.getAbsolutePath(), option1, option2, option3, option4).start();
 			BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()));
 			if (check_error) {
 				BufferedReader br2 = new BufferedReader(new InputStreamReader(process.getErrorStream()));
@@ -2038,6 +2077,7 @@ public class Debugger {
 		boolean next = false;
 		try {
 			while ((line = br.readLine()) != null) {
+				System.out.print(line);
 				if (line.contains("any rule head")) {
 					next = true;
 					continue;
